@@ -1,0 +1,9 @@
+                                                                     bytes_in       bytes_out
+apsd.584                                                                 8124           63183
+mDNSResponder.680                                                    11071438         7518420
+accountsd.1009                                                           6703            4512
+Google Chrome H.23649                                                 3091824         2053789
+WhatsApp.28474                                                          24851           21170
+netbiosd.29013                                                          65746           33568
+Claude Helper.33940                                                   2566790         5114107
+claude.39550                                                          1002247         4618946

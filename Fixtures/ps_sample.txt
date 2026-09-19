@@ -1,0 +1,501 @@
+  PID  PPID    RSS      TIME COMM
+  613     1  81504 256:48.19 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer
+29075 29072  82608  18:19.11 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper
+29090 29072 549664  15:33.78 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer)
+ 5817     1  23840   2:34.98 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.GPU.xpc/Contents/MacOS/com.apple.WebKit.GPU
+ 5822     1  87984   6:33.14 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+29072     1 239968   4:32.56 /Applications/Claude.app/Contents/MacOS/Claude
+39550 39549 309168   0:28.76 /Users/mucahit/Library/Application Support/Claude/claude-code/2.1.275/claude.app/Contents/MacOS/claude
+32566 23641 167856   4:16.13 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+  617     1  34048  10:15.18 /System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow
+    1     0  23120  15:44.00 /sbin/launchd
+ 5798     1  54208  29:08.51 /Applications/Adobe Acrobat DC/Adobe Acrobat.app/Contents/MacOS/AdobeAcrobat
+  541     1  21792   9:56.06 /usr/libexec/logd
+  751     1  40752  33:03.11 /System/Library/DriverExtensions/com.apple.DriverKit-AppleBCMWLAN.dext/com.apple.DriverKit-AppleBCMWLAN
+  669     1   1872   6:46.20 /usr/libexec/clocksyncd
+23641     1 316368   6:58.45 /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+ 1095     1  46448   8:31.69 /System/Library/CoreServices/ControlCenter.app/Contents/MacOS/ControlCenter
+  583     1  11296   2:46.21 /usr/libexec/opendirectoryd
+32506 23641 216240   4:23.56 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+36227 36226 171984   2:00.80 /Users/mucahit/Library/Application Support/Claude/claude-code/2.1.275/claude.app/Contents/MacOS/claude
+ 1391     1  20848   4:27.75 /Applications/Adobe Acrobat DC/Adobe Acrobat.app/Contents/Helpers/AdobeResourceSynchronizer.app/Contents/MacOS/AdobeResourceSynchronizer
+29223 29222 160208   3:32.85 /Users/mucahit/Library/Application Support/Claude/claude-code/2.1.275/claude.app/Contents/MacOS/claude
+  790     1  12320   0:59.09 /usr/libexec/modelmanagerd
+ 5807  5802  15760   3:00.22 /Applications/Adobe Acrobat DC/Adobe Acrobat.app/Contents/Frameworks/AcroCEF Helper (GPU).app/Contents/MacOS/AcroCEF Helper (GPU)
+  557     1   8752   1:22.97 /System/Library/CoreServices/powerd.bundle/powerd
+  609     1   5760   3:17.58 /usr/libexec/corebrightnessd
+28456 23641 310704   8:27.59 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+28474     1 191920   5:56.77 /Applications/WhatsApp.app/Contents/MacOS/WhatsApp
+36157 23641 433184   2:58.84 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+  607     1   4336   3:26.75 /usr/sbin/notifyd
+39388 23641 146368   0:25.40 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+39376 23641 141920   0:05.65 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+39327 23641 147712   0:04.34 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+39252     1   9536   0:00.17 /System/Library/PrivateFrameworks/IntelligenceFlowContextRuntime.framework/Versions/A/intelligencecontextd
+39250     1   8896   0:00.20 /System/Library/PrivateFrameworks/EmailDaemon.framework/Versions/A/maild
+39240     1  21024   0:00.22 /System/Library/PrivateFrameworks/SafariPlatformSupport.framework/Versions/A/XPCServices/com.apple.SafariPlatformSupport.Helper.xpc/Contents/MacOS/com.apple.SafariPlatformSupport.Helper
+39219     1   6224   0:00.03 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/chrome_crashpad_handler
+39217     1  86352   0:03.91 /Users/mucahit/Applications/Chrome Apps.localized/GitHub.app/Contents/MacOS/app_mode_loader
+39062 29072  74352   0:00.52 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer)
+38821     1  11584   0:00.65 /System/Library/Frameworks/CoreTelephony.framework/Support/CommCenter
+38505 23641 167952   0:12.98 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+38443 29072  73920   0:00.42 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer)
+37974 29072  75712   0:00.90 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer)
+36243 29248   1312   0:00.01 /bin/zsh
+36226 29072    768   0:00.00 /Applications/Claude.app/Contents/Helpers/disclaimer
+36046     1    592   0:00.06 /System/Library/PrivateFrameworks/PackageKit.framework/Resources/installd
+36045     1    608   0:00.06 /System/Library/PrivateFrameworks/PackageKit.framework/Resources/system_installd
+36039     1   8064   0:00.86 /System/Library/CoreServices/Software Update.app/Contents/Resources/softwareupdated
+35482 23641 138944   1:28.58 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+35368     1   3952   0:00.08 /System/Library/CoreServices/EscrowSecurityAlert.app/Contents/MacOS/EscrowSecurityAlert
+35242     1  16880   0:04.77 /System/Library/PrivateFrameworks/ContactsDonation.framework/Versions/A/Support/contactsdonationagent
+35238     1   8352   0:00.19 /System/Library/PrivateFrameworks/SocialLayer.framework/sociallayerd.app/Contents/MacOS/sociallayerd
+35237     1   6240   0:00.94 /System/Cryptexes/App/usr/libexec/SafariBookmarksSyncAgent
+34038     1   8288   0:00.46 /System/Library/PrivateFrameworks/JetCore.framework/Support/jetpackassetd
+33940 29072  51344   0:09.74 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper
+33623     1   9008   0:00.32 /System/Library/PrivateFrameworks/BookKit.framework/Versions/A/XPCServices/com.apple.BKAgentService.xpc/Contents/MacOS/com.apple.BKAgentService
+33621     1   8032   0:00.08 /System/Library/PrivateFrameworks/AssistantServices.framework/Versions/A/XPCServices/media-indexer.xpc/Contents/MacOS/media-indexer
+33577     1  15696   0:19.32 /usr/libexec/trustd
+33575     1  17440   0:11.07 /usr/libexec/trustd
+33507     1  16192   0:02.31 /usr/libexec/remindd
+33482     1  14688   0:01.53 /System/Library/PrivateFrameworks/FaceTimeMessageStore.framework/facetimemessagestored
+33465     1   8784   0:00.36 /System/Library/PrivateFrameworks/AMPLibrary.framework/Versions/A/Support/AMPArtworkAgent
+33462     1  15360   0:01.19 /System/Library/PrivateFrameworks/CallHistory.framework/Support/CallHistorySyncHelper
+33461     1   4224   0:00.14 /System/Library/PrivateFrameworks/AppleAccountTransparency.framework/Versions/A/Resources/appleaccounttransparencyd
+33459     1  17328   0:02.34 /System/Library/PrivateFrameworks/AMPLibrary.framework/Versions/A/Support/AMPLibraryAgent
+33440     1   6864   0:00.38 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/managedcorespotlightd
+33425     1   9792   0:00.32 /System/Library/PrivateFrameworks/CloudServices.framework/Helpers/com.apple.sbd
+33094     1  11152   0:00.78 /usr/libexec/icloudmailagent
+32568 23641  97472   0:00.42 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+32525 23641  97056   0:00.41 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+32524 23641 119552   0:02.09 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+31982     1  14880   0:00.39 /System/Library/PrivateFrameworks/SafariPlatformSupport.framework/Versions/A/XPCServices/com.apple.SafariPlatformSupport.Helper.xpc/Contents/MacOS/com.apple.SafariPlatformSupport.Helper
+31847 23641  99680   0:06.03 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+29974 23641 121824   0:01.17 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+29938 23641 155344   0:26.45 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+29721     1  49088   0:37.89 /Applications/Parallels Toolbox.app/Contents/Applications/CPU Temperature.app/Contents/MacOS/CPU Temperature
+29718     1  52736   1:17.21 /Applications/Parallels Toolbox.app/Contents/Applications/Free Memory.app/Contents/MacOS/Free Memory
+29667     1  12896   0:00.67 /System/Library/PrivateFrameworks/XprotectFramework.framework/Versions/A/XPCServices/XProtectBridgeService.xpc/Contents/MacOS/XProtectBridgeService
+29669     1   5968   0:00.05 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/chrome_crashpad_handler
+29666     1  87600   0:18.36 /Users/mucahit/Applications/Chrome Apps.localized/Cloudflare.app/Contents/MacOS/app_mode_loader
+29252 29248    784   0:00.02 /bin/zsh
+29248 29072  43648   0:00.50 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper
+29222 29072    736   0:00.00 /Applications/Claude.app/Contents/Helpers/disclaimer
+29203     1   9760   0:00.18 /System/Library/Frameworks/QuickLookUI.framework/Versions/A/XPCServices/QuickLookUIService.xpc/Contents/MacOS/QuickLookUIService
+29202     1  44992   0:04.92 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService
+29125 29072  51360   0:00.82 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper
+29124 29072  52048   0:01.38 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper
+29118 29072  38960   0:00.59 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper
+29117 29072  28656   0:00.52 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper
+29101 29072  60352   0:00.75 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper
+29086 29072  68416   0:01.05 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer)
+29079     1   4720   0:00.11 /System/Library/PrivateFrameworks/CascadeSets.framework/Versions/A/XPCServices/SetStoreUpdateService.xpc/Contents/MacOS/SetStoreUpdateService
+29074     1   7040   0:00.02 /Applications/Claude.app/Contents/Frameworks/Electron Framework.framework/Helpers/chrome_crashpad_handler
+29035     1   9504   0:00.40 /System/Library/PrivateFrameworks/TextToSpeechVoiceBankingSupport.framework/Support/voicebankingd
+29013     1    816   0:00.25 /usr/sbin/netbiosd
+29007     1   5888   0:00.16 /System/Library/Frameworks/ClassKit.framework/Versions/A/progressd
+29004     1   6640   0:00.14 /System/Library/PrivateFrameworks/CloudPhotoServices.framework/Versions/A/XPCServices/com.apple.CloudPhotosConfiguration.xpc/Contents/MacOS/com.apple.CloudPhotosConfiguration
+29002     1  21024   0:02.81 /usr/libexec/studentd
+28977     1  10720   0:00.18 /usr/libexec/betaenrollmentagent
+28877     1   9904   0:00.48 /usr/libexec/adprivacyd
+28852     1   7760   0:00.54 /System/Library/Frameworks/ManagedAppDistribution.framework/Support/managedappdistributionagent
+28679     1   8848   0:03.72 /System/Library/PrivateFrameworks/OnDeviceStorage.framework/Support/amsondevicestoraged
+28669     1  29104   0:03.19 /usr/libexec/gamed
+28487     1  15600   0:00.48 /System/Library/PrivateFrameworks/SafariPlatformSupport.framework/Versions/A/XPCServices/com.apple.SafariPlatformSupport.Helper.xpc/Contents/MacOS/com.apple.SafariPlatformSupport.Helper
+28453 23641 113440   0:01.09 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+28372 23641 169712   7:38.76 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+27258 23641   3888   0:00.01 /Applications/Claude.app/Contents/Helpers/chrome-native-host
+27256 23641 105648   0:02.99 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+27213     1   8496   0:01.02 /System/Library/Frameworks/AuthenticationServices.framework/Versions/A/XPCServices/com.apple.AuthenticationServices.Helper.xpc/Contents/MacOS/com.apple.AuthenticationServices.Helper
+27205 23641  59968   0:01.41 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper.app/Contents/MacOS/Google Chrome Helper
+27204 23641  58080   0:02.44 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper.app/Contents/MacOS/Google Chrome Helper
+27191 23641 116624   0:04.31 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+26833     1   5456   0:01.36 /System/Cryptexes/App/usr/libexec/AuthenticationServicesAgent
+26831     1   5856   0:00.74 /usr/libexec/filevaultd
+25449     1  18976   0:08.11 /System/Library/PrivateFrameworks/SiriInference.framework/Versions/A/siriinferenced
+25173     1  11264   0:01.70 /usr/libexec/hybridsearchd
+25169     1   7600   0:00.32 /usr/libexec/intelligentroutingd
+25170     1  16176   0:15.75 /System/Library/PrivateFrameworks/GenerativeExperiencesRuntime.framework/Versions/A/generativeexperiencesd
+25039     1  21856   2:12.60 /usr/libexec/PerfPowerServices
+25019     1    976   0:00.30 /usr/libexec/logd_helper
+24812     1   7152   0:01.97 /usr/libexec/wifivelocityd
+24532     1   7216   0:00.23 /System/Library/PrivateFrameworks/SessionCore.framework/Support/liveactivitiesd
+24531     1  12896   0:00.54 /System/Library/PrivateFrameworks/WorkflowKit.framework/XPCServices/ShortcutsViewService.xpc/Contents/MacOS/ShortcutsViewService
+24528     1  15696   0:03.68 /System/Library/PrivateFrameworks/AppPredictionFoundation.framework/Versions/A/XPCServices/AppPredictionIntentsHelperService.xpc/Contents/MacOS/AppPredictionIntentsHelperService
+24527     1   8000   0:00.66 /System/Library/PrivateFrameworks/CascadeSets.framework/Versions/A/XPCServices/SetStoreUpdateService.xpc/Contents/MacOS/SetStoreUpdateService
+24516     1  12384   0:01.66 /usr/libexec/proactived
+24494     1   8256   0:00.46 /System/Library/PrivateFrameworks/iCloudDriveService.framework/XPCServices/ContainerMetadataExtractor.xpc/Contents/MacOS/ContainerMetadataExtractor
+24430     1  17376   0:01.06 /System/Library/PrivateFrameworks/SoftwareUpdate.framework/Resources/SoftwareUpdateNotificationManager.app/Contents/MacOS/SoftwareUpdateNotificationManager
+24405     1  10832   0:01.17 /usr/libexec/tipsd
+24321     1  15328   0:03.07 /System/Library/PrivateFrameworks/PhotoLibraryServices.framework/Versions/A/Support/photolibraryd
+24318     1  24352   0:12.44 /System/Library/PrivateFrameworks/PhotoAnalysis.framework/Versions/A/Support/photoanalysisd
+24260     1   8208   0:01.99 /usr/libexec/mlhostd
+24258     1   7376   0:00.73 /usr/libexec/PowerUIAgent
+24054     1   9104   0:01.52 /usr/libexec/findmydevice-user-agent
+24053     1  10784   0:02.59 /usr/libexec/findmylocateagent
+24050     1  15792   0:06.73 /usr/libexec/searchpartyuseragent
+24048     1  10128   0:00.49 /System/Library/PrivateFrameworks/iCloudNotification.framework/iCloudNotificationAgent
+24038     1  17888   0:07.78 /usr/libexec/transparencyd
+23992     1    784   0:08.20 /usr/libexec/sysmond
+23874     1   8176   0:00.54 /System/Library/PrivateFrameworks/StatusKit.framework/StatusKitAgent
+23870     1  18608   0:14.12 /System/Library/PrivateFrameworks/VoiceShortcuts.framework/Versions/A/Support/siriactionsd
+23868     1  14800   0:06.71 /System/Library/PrivateFrameworks/iCloudDriveCore.framework/Versions/A/Support/bird
+23841     1  21728   0:09.35 /usr/libexec/siriknowledged
+23840     1  11824   0:04.06 /System/Library/CoreServices/Siri.app/Contents/XPCServices/SiriNCService.xpc/Contents/MacOS/SiriNCService
+23821     1   9648   0:02.22 /System/Library/PrivateFrameworks/GeoServices.framework/Versions/A/XPCServices/com.apple.geod.xpc/Contents/MacOS/com.apple.geod
+23820     1   9792   0:02.38 /System/Library/PrivateFrameworks/GeoServices.framework/Versions/A/XPCServices/com.apple.geod.xpc/Contents/MacOS/com.apple.geod
+23812     1  23136   0:13.02 /usr/libexec/routined
+23808     1  14240   0:04.15 /System/Library/PrivateFrameworks/IMDPersistence.framework/XPCServices/IMDPersistenceAgent.xpc/Contents/MacOS/IMDPersistenceAgent
+23803     1   5776   0:01.42 /usr/libexec/sandboxd
+23793     1  14464   0:28.54 /System/Library/PrivateFrameworks/IntelligencePlatformCompute.framework/Versions/A/XPCServices/IntelligencePlatformComputeService.xpc/Contents/MacOS/IntelligencePlatformComputeService
+23789     1  11616   0:02.77 /System/Library/PrivateFrameworks/CommunicationTrust.framework/Support/communicationtrustd
+23788     1  18256   0:06.34 /System/Library/PrivateFrameworks/CalendarDaemon.framework/Support/calaccessd
+23787     1  26192   0:17.72 /System/Library/PrivateFrameworks/DataAccess.framework/Support/dataaccessd
+23784     1   9584   0:13.36 /System/Library/CoreServices/Siri.app/Contents/MacOS/Siri
+23782     1   9024   0:01.68 /usr/libexec/keyboardservicesd
+23780     1   5472   0:02.56 /System/Library/PrivateFrameworks/SystemStatusServer.framework/Support/systemstatusd
+23763     1   9584   0:00.74 /System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Resources/commerce
+23754     1  14832   0:01.80 /System/Library/PrivateFrameworks/iTunesCloud.framework/Support/itunescloudd
+23751     1  11552   0:01.64 /System/Library/PrivateFrameworks/CoreParsec.framework/parsecd
+23744     1   7360   0:00.90 /System/Library/PrivateFrameworks/CoreAnalytics.framework/Support/analyticsagent
+23742     1  14496   0:01.03 /System/Library/PrivateFrameworks/SafariPlatformSupport.framework/Versions/A/XPCServices/com.apple.SafariPlatformSupport.Helper.xpc/Contents/MacOS/com.apple.SafariPlatformSupport.Helper
+23740     1   7280   0:00.22 /System/Library/PrivateFrameworks/CoreRecents.framework/Versions/A/Support/recentsd
+23739     1  16016   0:07.95 /System/Library/Frameworks/Contacts.framework/Support/postersyncd
+23716     1   4080   0:00.28 /System/Library/PrivateFrameworks/CoreFollowUp.framework/Versions/A/Support/followupd
+23714     1  13152   0:03.33 /System/Library/PrivateFrameworks/ScreenTimeSettingsFoundation.framework/Versions/A/ScreenTimeSettingsAgent
+23710     1  12464   0:01.27 /System/Library/PrivateFrameworks/ScreenTimeCore.framework/Versions/A/ScreenTimeAgent
+23706     1  39680   2:19.13 /System/Library/Frameworks/Contacts.framework/Support/contactsd
+23704     1  20736   0:06.95 /System/Library/PrivateFrameworks/TelephonyUtilities.framework/callservicesd
+23651 23641  37664   0:03.30 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper.app/Contents/MacOS/Google Chrome Helper
+23649 23641 100672   3:11.04 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper.app/Contents/MacOS/Google Chrome Helper
+23648 23641 111392  12:52.24 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper.app/Contents/MacOS/Google Chrome Helper
+23643     1   5872   0:00.07 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/chrome_crashpad_handler
+23454     1  11888   0:04.60 /System/Library/CoreServices/talagentd
+23445     1   1872   0:01.49 /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/HIServices.framework/Versions/A/XPCServices/com.apple.hiservices-xpcservice.xpc/Contents/MacOS/com.apple.hiservices-xpcservice
+23418     1  52864   6:08.97 /usr/libexec/duetexpertd
+23151     1  18944   0:36.26 /usr/libexec/coreduetd
+22509     1   4496   0:01.34 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+22492     1  19840   0:03.54 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService
+22464     1   5472   0:01.51 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+21111     1   4000   0:00.47 /System/Library/Frameworks/Security.framework/Versions/A/XPCServices/com.apple.CodeSigningHelper.xpc/Contents/MacOS/com.apple.CodeSigningHelper
+17948     1  10560   0:00.97 /System/Library/CoreServices/UserNotificationCenter.app/Contents/MacOS/UserNotificationCenter
+17301     1   4624   0:00.17 /System/Applications/Mail.app/Contents/PlugIns/com.apple.mail.SpotlightIndexExtension.appex/Contents/MacOS/com.apple.mail.SpotlightIndexExtension
+16159     1   2704   0:00.16 /System/Library/PrivateFrameworks/MobileAccessoryUpdater.framework/XPCServices/EAUpdaterService.xpc/Contents/MacOS/EAUpdaterService
+16040     1   4848   0:01.22 /System/Library/PrivateFrameworks/MobileAccessoryUpdater.framework/Support/accessoryupdaterd
+ 7862     1  35888  28:36.22 /usr/libexec/spotlightknowledged.updater
+ 5873     1   2144   0:00.96 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+ 5872     1   3488   0:04.44 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+ 5865     1   2864   0:03.01 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+ 5838     1   3408   0:03.04 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+ 5832  5802  14928   0:01.43 /Applications/Adobe Acrobat DC/Adobe Acrobat.app/Contents/Frameworks/AcroCEF Helper (Renderer).app/Contents/MacOS/AcroCEF Helper (Renderer)
+ 5824     1   3024   0:03.17 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+ 5823  5802  21008   0:03.69 /Applications/Adobe Acrobat DC/Adobe Acrobat.app/Contents/Frameworks/AcroCEF Helper (Renderer).app/Contents/MacOS/AcroCEF Helper (Renderer)
+ 5821     1   6688   0:29.06 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.Networking.xpc/Contents/MacOS/com.apple.WebKit.Networking
+ 5819     1   3488   0:04.17 /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+ 5818  5802  13904   0:01.13 /Applications/Adobe Acrobat DC/Adobe Acrobat.app/Contents/Frameworks/AcroCEF Helper (Renderer).app/Contents/MacOS/AcroCEF Helper (Renderer)
+ 5816  5802  11440   0:00.27 /Applications/Adobe Acrobat DC/Adobe Acrobat.app/Contents/Frameworks/AcroCEF Helper.app/Contents/MacOS/AcroCEF Helper
+ 5815     1  11552   0:02.56 /System/Library/PrivateFrameworks/SafariPlatformSupport.framework/Versions/A/XPCServices/com.apple.SafariPlatformSupport.Helper.xpc/Contents/MacOS/com.apple.SafariPlatformSupport.Helper
+ 5812  5802  12800   0:01.91 /Applications/Adobe Acrobat DC/Adobe Acrobat.app/Contents/Frameworks/AcroCEF Helper.app/Contents/MacOS/AcroCEF Helper
+ 5802     1  23872   0:06.75 /Applications/Adobe Acrobat DC/Adobe Acrobat.app/Contents/Helpers/AcroCEF/AcroCEF.app/Contents/MacOS/AcroCEF
+ 5519     1   4816   1:55.82 /System/Library/ExtensionKit/Extensions/TGOnDeviceInferenceProviderService.appex/Contents/MacOS/TGOnDeviceInferenceProviderService
+ 5517     1   4304   1:10.38 /System/Library/ExtensionKit/Extensions/TGOnDeviceInferenceProviderService.appex/Contents/MacOS/TGOnDeviceInferenceProviderService
+ 5493     1    320   0:00.06 /System/Library/CoreServices/Setup Assistant.app/Contents/Resources/mbuseragent
+ 4432     1    944   0:03.03 /usr/sbin/distnoted
+ 3657     1   4944   0:14.62 /System/Library/ExtensionKit/Extensions/GenerativeExperiencesSafetyInferenceProvider.appex/Contents/MacOS/GenerativeExperiencesSafetyInferenceProvider
+ 3656     1   5952   2:26.73 /System/Library/ExtensionKit/Extensions/TGOnDeviceInferenceProviderService.appex/Contents/MacOS/TGOnDeviceInferenceProviderService
+ 3581     1  10176   0:12.24 /System/Library/PrivateFrameworks/People.framework/peopled
+ 3526     1   1344   0:00.09 /System/Library/DriverExtensions/IOUserBluetoothSerialDriver.dext/IOUserBluetoothSerialDriver
+ 3525     1   1344   0:00.08 /System/Library/DriverExtensions/IOUserBluetoothSerialDriver.dext/IOUserBluetoothSerialDriver
+ 3524     1   1328   0:00.08 /System/Library/DriverExtensions/IOUserBluetoothSerialDriver.dext/IOUserBluetoothSerialDriver
+ 3523     1   1344   0:00.11 /System/Library/DriverExtensions/IOUserBluetoothSerialDriver.dext/IOUserBluetoothSerialDriver
+ 3499     1  18800   7:38.13 /usr/sbin/bluetoothd
+ 3497     1   9328   0:02.84 /System/Library/CoreServices/PowerChime.app/Contents/MacOS/PowerChime
+ 3184     1  16624   0:10.52 /Applications/WhatsApp.app/Contents/PlugIns/Intents.appex/Contents/MacOS/Intents
+ 2522     1    848   0:03.24 /usr/sbin/distnoted
+ 2521     1    592   0:00.19 /System/Library/ExtensionKit/Extensions/PCCAgentClientExtension.appex/Contents/MacOS/PCCAgentClientExtension
+ 2303     1   1392   0:02.98 /System/Cryptexes/App/usr/libexec/PasswordBreachAgent
+ 2067     1   3952   0:22.02 /usr/libexec/spotlightknowledged.importer
+ 1932     1   2672   0:00.67 /System/Library/ExtensionKit/Extensions/VpnSettingsIntents.appex/Contents/MacOS/VpnSettingsIntents
+ 1931     1   2688   0:00.50 /System/Library/ExtensionKit/Extensions/StorageSettingsIntentsExtension.appex/Contents/MacOS/StorageSettingsIntentsExtension
+ 1930     1   2704   0:02.12 /System/Library/ExtensionKit/Extensions/AppleAccountIntents_macOS.appex/Contents/MacOS/AppleAccountIntents_macOS
+ 1929     1   2544   0:00.29 /System/Library/ExtensionKit/Extensions/ClassKitAppIntents.appex/Contents/MacOS/ClassKitAppIntents
+ 1928     1   3008   0:01.05 /System/Library/ExtensionKit/Extensions/WallpaperSettingsIntents.appex/Contents/MacOS/WallpaperSettingsIntents
+ 1927     1   2864   0:00.86 /System/Library/ExtensionKit/Extensions/BiometricsAndPasswordSettingsAppIntentsExtension.appex/Contents/MacOS/BiometricsAndPasswordSettingsAppIntentsExtension
+ 1926     1   2656   0:00.58 /System/Library/ExtensionKit/Extensions/GameCenterSettingsSearchExtension.appex/Contents/MacOS/GameCenterSettingsSearchExtension
+ 1923     1   3136   0:01.63 /System/Library/ExtensionKit/Extensions/ScreenTimeAppIntentsExtension.appex/Contents/MacOS/ScreenTimeAppIntentsExtension
+ 1921     1   2864   0:49.61 /System/Library/ExtensionKit/Extensions/MouseIntentsExtension.appex/Contents/MacOS/MouseIntentsExtension
+ 1920     1   2672   0:00.59 /System/Library/ExtensionKit/Extensions/ProfilesSettingsIntents.appex/Contents/MacOS/ProfilesSettingsIntents
+ 1919     1   2704   0:01.01 /System/Library/ExtensionKit/Extensions/InternationalSettingsExtension.appex/Contents/MacOS/InternationalSettingsExtension
+ 1917     1   2672   0:00.88 /System/Library/ExtensionKit/Extensions/DoNotDisturbAppIntents.appex/Contents/MacOS/DoNotDisturbAppIntents
+ 1915     1   2768   0:00.47 /System/Library/ExtensionKit/Extensions/ClassroomDeviceExpert.appex/Contents/MacOS/ClassroomDeviceExpert
+ 1913     1   2512   0:00.28 /System/Library/ExtensionKit/Extensions/GameControllerSettingsIntents.appex/Contents/MacOS/GameControllerSettingsIntents
+ 1912     1   2768   0:00.87 /System/Library/ExtensionKit/Extensions/TimeMachineSettingsIntents.appex/Contents/MacOS/TimeMachineSettingsIntents
+ 1911     1   2656   0:00.82 /System/Library/ExtensionKit/Extensions/SpotlightSettingsIntentsExtension.appex/Contents/MacOS/SpotlightSettingsIntentsExtension
+ 1908     1   3264   0:01.00 /System/Library/ExtensionKit/Extensions/AccountsUISettingsAppIntents.appex/Contents/MacOS/AccountsUISettingsAppIntents
+ 1907     1   2400   0:00.29 /System/Library/ExtensionKit/Extensions/CDsAndDvDsSettingsIntents.appex/Contents/MacOS/CDsAndDvDsSettingsIntents
+ 1905     1   3088   0:06.78 /System/Library/ExtensionKit/Extensions/ControlCenterSettingsIntents.appex/Contents/MacOS/ControlCenterSettingsIntents
+ 1904     1   2880   0:05.70 /System/Library/ExtensionKit/Extensions/TrackpadIntentsExtension.appex/Contents/MacOS/TrackpadIntentsExtension
+ 1903     1   3248   0:01.88 /System/Library/ExtensionKit/Extensions/FamilyIntents.appex/Contents/MacOS/FamilyIntents
+ 1900     1   2640   0:00.39 /System/Library/ExtensionKit/Extensions/PrefPaneSearchIntent.appex/Contents/MacOS/PrefPaneSearchIntent
+ 1899     1   2688   0:00.66 /System/Library/ExtensionKit/Extensions/PasswordSettingsAppIntentsExtension.appex/Contents/MacOS/PasswordSettingsAppIntentsExtension
+ 1898     1   2720   0:01.36 /System/Library/ExtensionKit/Extensions/WiFiMacSettingsIntents.appex/Contents/MacOS/WiFiMacSettingsIntents
+ 1897     1   2800   0:06.41 /System/Library/ExtensionKit/Extensions/DesktopSettingsIntents.appex/Contents/MacOS/DesktopSettingsIntents
+ 1895     1   2752   0:04.57 /System/Library/ExtensionKit/Extensions/KeyboardSettingsIntents.appex/Contents/MacOS/KeyboardSettingsIntents
+ 1887     1   2800   0:27.86 /System/Library/ExtensionKit/Extensions/AccessibilitySettingsSearchExtension.appex/Contents/MacOS/AccessibilitySettingsSearchExtension
+ 1886     1   2656   0:00.58 /System/Library/ExtensionKit/Extensions/SoftwareUpdateSettingsExtensionIntents.appex/Contents/MacOS/SoftwareUpdateSettingsExtensionIntents
+ 1885     1   3392   0:01.57 /System/Library/ExtensionKit/Extensions/BluetoothSettingsAppIntentsWidgetExtension.appex/Contents/MacOS/BluetoothSettingsAppIntentsWidgetExtension
+ 1883     1   2720   0:00.72 /System/Library/ExtensionKit/Extensions/StartupDiskWidgetExtension.appex/Contents/MacOS/StartupDiskWidgetExtension
+ 1876     1   3824   0:11.52 /System/Library/ExtensionKit/Extensions/SiriSetupSettingsIntents.appex/Contents/MacOS/SiriSetupSettingsIntents
+ 1874     1   3216   0:02.11 /System/Library/ExtensionKit/Extensions/DateTimeIntentsExtension.appex/Contents/MacOS/DateTimeIntentsExtension
+ 1868     1   2784   0:22.84 /System/Library/ExtensionKit/Extensions/PlaceholderSettingsSearchTermsIntents.appex/Contents/MacOS/PlaceholderSettingsSearchTermsIntents
+ 1866     1   4144   0:07.03 /System/Library/ExtensionKit/Extensions/NotificationsSettingsIntents.appex/Contents/MacOS/NotificationsSettingsIntents
+ 1865     1     16   0:00.06 /System/Applications/System Settings.app/Contents/PlugIns/SettingsImportExtension.appex/Contents/MacOS/SettingsImportExtension
+ 1770     1   3232   0:03.10 /System/Library/ExtensionKit/Extensions/BatterySettingsIntentsExtension.appex/Contents/MacOS/BatterySettingsIntentsExtension
+ 1726     1   1200   0:00.03 /System/Library/CoreServices/CrashReporterSupportHelper
+ 1704     1    864   0:03.32 /usr/sbin/distnoted
+ 1671     1     16   0:00.06 /System/Applications/Calendar.app/Contents/Extensions/CalendarIntentsExtension.appex/Contents/MacOS/CalendarIntentsExtension
+ 1669     1     16   0:00.14 /System/Applications/Messages.app/Contents/Extensions/MessagesActionExtension.appex/Contents/MacOS/MessagesActionExtension
+ 1667     1     16   0:00.10 /System/Volumes/Preboot/Cryptexes/App/System/Applications/Safari.app/Contents/Extensions/SafariLinkExtension.appex/Contents/MacOS/SafariLinkExtension
+ 1357     1   6720   0:03.93 /System/Library/CoreServices/diagnostics_agent
+ 1638     1     16   0:00.02 /System/Library/ExtensionKit/Extensions/WallpaperMacintoshExtension.appex/Contents/MacOS/WallpaperMacintoshExtension
+ 1637     1     16   0:00.06 /System/Library/ExtensionKit/Extensions/WallpaperDynamicExtension.appex/Contents/MacOS/WallpaperDynamicExtension
+ 1636     1   4368   0:02.63 /System/Library/ExtensionKit/Extensions/WallpaperGradientExtension.appex/Contents/MacOS/WallpaperGradientExtension
+ 1635     1   2848   0:00.08 /System/Library/ExtensionKit/Extensions/WallpaperLegacyExtension.appex/Contents/MacOS/WallpaperLegacyExtension
+ 1634     1     16   0:00.02 /System/Library/ExtensionKit/Extensions/WallpaperSonomaExtension.appex/Contents/MacOS/WallpaperSonomaExtension
+ 1633     1     16   0:00.02 /System/Library/ExtensionKit/Extensions/NeptuneOneWallpaper.appex/Contents/MacOS/NeptuneOneWallpaper
+ 1632     1     16   0:00.02 /System/Library/ExtensionKit/Extensions/WallpaperSequoiaExtension.appex/Contents/MacOS/WallpaperSequoiaExtension
+ 1315     1   6544   0:02.68 /System/Library/CoreServices/SubmitDiagInfo
+ 1623     1   6544   0:03.47 /System/Library/Input Methods/PressAndHold.app/Contents/PlugIns/PAH_Extension.appex/Contents/MacOS/PAH_Extension
+ 1587     1     16   0:00.10 /Applications/Developer.app/Contents/PlugIns/Developer Widget.appex/Contents/MacOS/Developer Widget
+ 1583     1     16   0:00.12 /System/Applications/Shortcuts.app/Contents/PlugIns/ShortcutsWidgetExtension.appex/Contents/MacOS/ShortcutsWidgetExtension
+ 1577     1     16   0:00.24 /System/Applications/Notes.app/Contents/PlugIns/com.apple.Notes.WidgetExtension.appex/Contents/MacOS/com.apple.Notes.WidgetExtension
+ 1576     1     16   0:00.25 /Applications/Microsoft Outlook.app/Contents/PlugIns/CalendarWidgetExtension.appex/Contents/MacOS/CalendarWidgetExtension
+ 1542     1   4672   0:04.30 /System/Library/PrivateFrameworks/FamilyControls.framework/Resources/parentalcontrolsd
+ 1517     1  11616   0:13.02 /System/Library/PrivateFrameworks/HearingCore.framework/heard
+ 1525     1    336   0:00.22 /System/Library/Image Capture/Support/icdd
+ 1531     1   2848   0:00.55 /System/Library/CoreServices/AirPlayUIAgent.app/Contents/MacOS/AirPlayUIAgent
+ 1534     1   8400   0:06.95 /System/Library/CoreServices/TextInputMenuAgent.app/Contents/MacOS/TextInputMenuAgent
+ 1479     1   5488   1:33.62 /Applications/Adobe Acrobat DC/Adobe Acrobat.app/Contents/Frameworks/AdobeCrashReporter.framework/Versions/A/Adobe Crash Processor.app/Contents/MacOS/Adobe Crash Processor
+ 1432     1   4240   0:00.67 /System/Library/PrivateFrameworks/UniversalAccess.framework/Versions/A/Resources/universalAccessAuthWarn.app/Contents/MacOS/universalAccessAuthWarn
+ 1401     1     64   0:00.04 /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/CVMServer
+ 1398     1    128   0:02.20 /System/Library/PrivateFrameworks/CoreFP.framework/Versions/A/fairplayd
+ 1384     1     16   0:00.22 /System/Library/CoreServices/PeopleViewService.app/Contents/PlugIns/PeopleWidget_macOSExtension.appex/Contents/MacOS/PeopleWidget_macOSExtension
+ 1380     1     16   0:00.07 /System/iOSSupport/System/Library/ExtensionKit/Extensions/HomeWidgetIntentsExtension.appex/Contents/MacOS/HomeWidgetIntentsExtension
+ 1379     1     16   0:00.29 /Applications/Microsoft Excel.app/Contents/PlugIns/ExcelWidget_mac.appex/Contents/MacOS/ExcelWidget_mac
+ 1377     1     16   0:00.14 /System/Applications/Tips.app/Contents/PlugIns/TipsWidgetExtension.appex/Contents/MacOS/TipsWidgetExtension
+ 1376     1     16   0:00.28 /System/Applications/Reminders.app/Contents/PlugIns/RemindersWidgetExtension.appex/Contents/MacOS/RemindersWidgetExtension
+ 1375     1     16   0:00.28 /Applications/Microsoft PowerPoint.app/Contents/PlugIns/PowerPointWidget_mac.appex/Contents/MacOS/PowerPointWidget_mac
+ 1369     1  10768   0:06.23 /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/com.apple.appkit.xpc.openAndSavePanelService.xpc/Contents/MacOS/com.apple.appkit.xpc.openAndSavePanelService
+ 1366     1   2768   0:00.55 /System/Applications/Home.app/Contents/PlugIns/HomeWidget.appex/Contents/MacOS/HomeWidget
+ 1364     1  34880   0:51.75 /System/Library/Services/AppleSpell.service/Contents/MacOS/AppleSpell
+ 1361     1    848   0:03.38 /usr/sbin/distnoted
+ 1355     1     16   0:00.04 /System/Applications/VoiceMemos.app/Contents/PlugIns/RecordWidgetExtension.appex/Contents/MacOS/RecordWidgetExtension
+ 1353     1   1760   0:01.49 /System/Applications/Podcasts.app/Contents/PlugIns/PodcastsWidget.appex/Contents/MacOS/PodcastsWidget
+ 1351     1     16   0:00.05 /System/Library/CoreServices/Screen Time.app/Contents/PlugIns/ScreenTimeWidgetIntentsExtension.appex/Contents/MacOS/ScreenTimeWidgetIntentsExtension
+ 1350     1   1760   0:00.27 /System/Applications/Journal.app/Contents/PlugIns/JournalWidgetsSecure.appex/Contents/MacOS/JournalWidgetsSecure
+ 1349     1   1264   0:00.13 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdwrite
+ 1347     1   1888   0:00.24 /System/Applications/FindMy.app/Contents/PlugIns/FindMyWidgetItems.appex/Contents/MacOS/FindMyWidgetItems
+ 1344     1     16   0:00.04 /System/Applications/Weather.app/Contents/PlugIns/WeatherIntents.appex/Contents/MacOS/WeatherIntents
+ 1342     1   2032   0:00.34 /System/Library/CoreServices/Screen Time.app/Contents/PlugIns/ScreenTimeWidgetExtension.appex/Contents/MacOS/ScreenTimeWidgetExtension
+ 1334     1   2544   0:00.38 /System/Library/CoreServices/Batteries.app/Contents/PlugIns/BatteriesAvocadoWidgetExtension.appex/Contents/MacOS/BatteriesAvocadoWidgetExtension
+ 1310     1   3456   0:00.73 /System/Library/CoreServices/Dock.app/Contents/XPCServices/com.apple.dock.extra.xpc/Contents/MacOS/com.apple.dock.extra
+ 1302     1   5808   0:03.81 /System/Library/PrivateFrameworks/CloudDocs.framework/PlugIns/com.apple.CloudDocs.iCloudDriveFileProvider.appex/Contents/MacOS/com.apple.CloudDocs.iCloudDriveFileProvider
+ 1292     1   3216   0:00.36 /System/Library/PrivateFrameworks/AgentSessionKitRuntime.framework/Versions/A/agentstored
+ 1295     1  18432   1:17.87 /System/Library/PrivateFrameworks/TextInputUIMacHelper.framework/Versions/A/XPCServices/CursorUIViewService.xpc/Contents/MacOS/CursorUIViewService
+ 1293     1   5712   0:00.43 /System/Library/Frameworks/InputMethodKit.framework/Resources/imklaunchagent
+ 1287     1   1872   0:00.20 /System/Library/Frameworks/CryptoTokenKit.framework/ctkahp.bundle/Contents/MacOS/ctkahp
+ 1282     1   1392   0:00.53 /System/Library/PrivateFrameworks/AMPDevices.framework/Versions/A/Support/AMPDeviceDiscoveryAgent
+ 1281     1  52400  15:15.15 /System/Applications/Siri AI.app/Contents/MacOS/Siri AI
+ 1280     1    432   0:00.19 automountd
+ 1279     1  38608   0:26.01 /System/Library/Frameworks/QuickLookUI.framework/Versions/A/XPCServices/QuickLookUIService.xpc/Contents/MacOS/QuickLookUIService
+ 1273     1  61408   5:09.76 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder
+ 1272     1   6192   0:05.27 /System/Library/CoreServices/SystemUIServer.app/Contents/MacOS/SystemUIServer
+ 1270     1   6224   0:01.64 /System/Applications/FindMy.app/Contents/PlugIns/FindMyWidgetPeople.appex/Contents/MacOS/FindMyWidgetPeople
+ 1271     1  19072   0:37.34 /System/Library/CoreServices/Dock.app/Contents/MacOS/Dock
+ 1264     1   9040   0:07.02 /System/Applications/Stickies.app/Contents/MacOS/Stickies
+ 1257     1   2608   0:00.66 /System/Applications/Home.app/Contents/PlugIns/HomeEnergyWidgetsExtension.appex/Contents/MacOS/HomeEnergyWidgetsExtension
+ 1256     1  30048  45:34.65 /System/Library/PrivateFrameworks/MediaAnalysis.framework/Versions/A/mediaanalysisd
+ 1255     1     16   0:00.04 /System/Library/PrivateFrameworks/MobileTimer.framework/PlugIns/MobileTimerIntents.appex/Contents/MacOS/MobileTimerIntents
+ 1249     1   1984   0:10.98 /System/Library/PrivateFrameworks/AmbientDisplay.framework/Versions/A/XPCServices/com.apple.AmbientDisplayAgent.xpc/Contents/MacOS/com.apple.AmbientDisplayAgent
+ 1246     1   1712   0:00.30 /System/Applications/Journal.app/Contents/PlugIns/JournalWidgets.appex/Contents/MacOS/JournalWidgets
+ 1244     1     16   0:00.05 /System/Applications/VoiceMemos.app/Contents/PlugIns/VoiceMemosSettingsWidgetExtension.appex/Contents/MacOS/VoiceMemosSettingsWidgetExtension
+ 1232     1     64   0:00.31 /System/Applications/Photos.app/Contents/PlugIns/PhotosReliveWidget.appex/Contents/MacOS/PhotosReliveWidget
+ 1229     1  22160   1:34.00 /System/Applications/Stocks.app/Contents/PlugIns/StocksWidget.appex/Contents/MacOS/StocksWidget
+ 1219     1  15056   0:06.93 /Applications/WhatsApp.app/Contents/PlugIns/ServiceExtension.appex/Contents/MacOS/ServiceExtension
+ 1212     1  18000   0:09.30 /System/Applications/Weather.app/Contents/PlugIns/WeatherWidget.appex/Contents/MacOS/WeatherWidget
+ 1210     1   8144   0:08.11 /System/Applications/Clock.app/Contents/PlugIns/WorldClockWidget.appex/Contents/MacOS/WorldClockWidget
+ 1204     1     16   0:00.03 /Applications/Microsoft Teams.app/Contents/PlugIns/TeamsWidgetExtension.appex/Contents/MacOS/TeamsWidgetExtension
+ 1192     1  10160   0:10.88 /System/Applications/Calendar.app/Contents/PlugIns/CalendarWidgetExtension.appex/Contents/MacOS/CalendarWidgetExtension
+ 1168     1     16   0:00.27 /System/Volumes/Preboot/Cryptexes/App/System/Applications/Safari.app/Contents/Extensions/SafariWidgetExtension.appex/Contents/MacOS/SafariWidgetExtension
+ 1177     1   5344   0:04.54 /System/Library/PrivateFrameworks/UserActivity.framework/Agents/useractivityd
+ 1175     1   1264   0:00.11 /System/Library/PrivateFrameworks/MediaRemote.framework/Support/mediaremoteagent
+ 1176     1   3568   0:01.31 /usr/libexec/avconferenced
+ 1169     1   9312   0:14.01 /System/Library/CoreServices/UIKitSystem.app/Contents/MacOS/UIKitSystem
+ 1167     1   6576  56:02.29 /System/Library/ExtensionKit/Extensions/WallpaperAerialsExtension.appex/Contents/MacOS/WallpaperAerialsExtension
+ 1166     1   4624   0:01.53 /System/Library/ExtensionKit/Extensions/WallpaperImageExtension.appex/Contents/MacOS/WallpaperImageExtension
+ 1158     1   5840   0:19.90 /System/Library/PrivateFrameworks/ViewBridge.framework/Versions/A/XPCServices/ViewBridgeAuxiliary.xpc/Contents/MacOS/ViewBridgeAuxiliary
+ 1143     1   9344   0:07.48 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdbulkimport
+ 1139     1  35728   2:27.58 /System/Library/CoreServices/NotificationCenter.app/Contents/MacOS/NotificationCenter
+ 1125     1  19296   0:22.05 /System/Library/PrivateFrameworks/ChronoCore.framework/Support/chronod
+ 1120     1    944   0:00.60 /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ATS.framework/Versions/A/Support/fontworker
+ 1117     1    848   0:03.42 /usr/sbin/distnoted
+ 1118     1   8880   0:32.59 /System/Library/Frameworks/ApplicationServices.framework/Frameworks/ATS.framework/Support/fontd
+ 1114     1   8688   0:07.89 /System/Library/CoreServices/WallpaperAgent.app/Contents/MacOS/WallpaperAgent
+ 1113     1  26384   2:55.31 /System/Library/CoreServices/MenuBarAgent.app/Contents/MacOS/MenuBarAgent
+ 1107     1  26784   5:38.21 /System/Library/CoreServices/WindowManager.app/Contents/MacOS/WindowManager
+ 1098     1   7264   0:06.20 /System/Library/PrivateFrameworks/PassKitCore.framework/passd
+ 1097     1  18192   0:31.68 /System/Library/PrivateFrameworks/AssistantServices.framework/Versions/A/Support/assistantd
+ 1086     1    864   0:03.38 /usr/sbin/distnoted
+ 1082     1    864   0:03.40 /usr/sbin/distnoted
+ 1080     1   4464   0:01.36 /System/Library/CoreServices/AccessibilityUIServer.app/Contents/MacOS/AccessibilityUIServer
+ 1073     1  66752  23:22.35 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd
+ 1068     1    864   0:03.55 /usr/sbin/distnoted
+ 1062     1   1840   0:00.11 /System/Library/Frameworks/CryptoTokenKit.framework/ctkd
+ 1001     1  24576   0:58.38 /System/Library/CoreServices/WiFiAgent.app/Contents/MacOS/WiFiAgent
+ 1058     1   8400   0:26.56 /usr/sbin/filecoordinationd
+ 1057     1  17872   0:20.67 /System/Library/PrivateFrameworks/HomeKitDaemon.framework/Support/homed
+ 1054     1   4112   0:56.01 /usr/libexec/nearbyd
+  979     1  14160   0:34.61 /System/Library/PrivateFrameworks/CoreDuetContext.framework/Resources/ContextStoreAgent
+ 1049     1  12880   0:24.42 /System/Library/PrivateFrameworks/AuthKit.framework/Versions/A/Support/akd
+ 1048     1   4848   0:01.78 /usr/libexec/ContinuityCaptureAgent
+ 1047     1  38704   4:05.56 /System/Library/PrivateFrameworks/CoreSuggestions.framework/Versions/A/Support/suggestd
+ 1046     1   5920   0:02.86 /System/Library/CoreServices/sharedfilelistd
+ 1038     1   9520   0:16.84 /System/Library/PrivateFrameworks/CommunicationsFilter.framework/CMFSyncAgent
+ 1025     1  11968   2:23.16 /System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd
+ 1023     1  14160   0:16.91 /System/Library/PrivateFrameworks/IMCore.framework/imagent.app/Contents/MacOS/imagent
+ 1021     1  18704   0:26.50 /System/Library/PrivateFrameworks/IDS.framework/identityservicesd.app/Contents/MacOS/identityservicesd
+ 1020     1  11952   0:17.52 /System/Library/PrivateFrameworks/DoNotDisturbServer.framework/Support/donotdisturbd
+ 1018     1  23184   0:50.83 /usr/libexec/knowledge-agent
+ 1012     1  39008   2:50.25 /usr/libexec/sharingd
+ 1011     1  15584   1:16.09 /usr/libexec/linkd
+ 1009     1  18896   1:25.84 /System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd
+ 1007     1   7488   0:08.60 /System/Library/Frameworks/LocalAuthentication.framework/Support/coreauthd
+ 1004     1  17888   2:39.09 /System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd
+ 1002     1   9440   0:04.49 /System/Library/PrivateFrameworks/UserNotificationsCore.framework/Support/usernotificationsd
+  995     1   8400   1:01.56 /System/Library/PrivateFrameworks/CoreSpeech.framework/corespeechd
+  987     1     16   0:00.03 /System/Library/PrivateFrameworks/SystemMigrationNetwork.framework/Resources/migrationhelper
+  992     1   3136   0:04.15 /usr/libexec/languageassetd
+  982     1  37232   0:31.85 /usr/sbin/usernoted
+  978     1  13648   0:21.19 /usr/libexec/rapportd
+  980     1  12048   0:30.14 /usr/libexec/nsurlsessiond
+  974     1  17280   2:42.65 /System/Library/PrivateFrameworks/TCC.framework/Support/tccd
+  973     1  11712   4:42.94 /System/Library/PrivateFrameworks/BiomeStreams.framework/Support/BiomeAgent
+  972     1   4992   0:19.35 /usr/libexec/containermanagerd
+  970     1   8160   0:03.39 /usr/libexec/pboard
+  966     1   8288   0:05.84 /System/Library/CoreServices/audioaccessoryd
+  960     1   8000   0:19.28 /usr/libexec/UserEventAgent
+  968     1   7216   0:09.79 /usr/sbin/universalaccessd
+  958     1  14288   1:00.40 /usr/libexec/secd
+  955     1    864   0:03.45 /usr/sbin/distnoted
+  943     1   5840   0:02.40 /System/Library/Frameworks/LocalAuthentication.framework/Support/coreauthd
+  939     1  10096   0:34.52 /usr/libexec/lsd
+  925     1    864   0:03.46 /usr/sbin/distnoted
+  927     1   6240   8:53.29 /usr/sbin/cfprefsd
+  920     1   6656   0:04.25 /usr/libexec/audiomxd
+  919     1   3216   0:32.75 /usr/sbin/distnoted
+  915     1    768   0:03.46 /usr/sbin/distnoted
+  912     1     80   0:00.06 /usr/libexec/rosetta/oahd
+  902     1  48800  10:27.82 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores
+  834     1   2464   0:00.33 /System/Library/Frameworks/CoreMediaIO.framework/Versions/A/Resources/UVCAssistant.systemextension/Contents/MacOS/UVCAssistant
+  832     1   2256   0:00.12 /usr/libexec/cameracaptured
+  833     1   4672   0:01.55 /System/Library/CoreServices/appleeventsd
+  813   551   2576   0:01.40 /usr/sbin/systemstats
+  808     1    848   0:03.53 /usr/sbin/distnoted
+  800     1  11632   1:30.44 /usr/libexec/wifip2pd
+  792     1   2960   4:16.45 /usr/sbin/BTLEServer
+  780     1   4480   0:06.51 Core Audio Driver (MSTeamsAudioDevice.driver)
+  774     1    848   0:03.58 /usr/sbin/distnoted
+  767     1  16160   7:15.53 /usr/sbin/coreaudiod
+  763     1    848   0:03.73 /usr/sbin/distnoted
+  756     1  12944   0:55.59 /usr/libexec/gamepolicyd
+  752     1   1008   2:07.51 /System/Library/DriverExtensions/com.apple.AppleUserHIDDrivers.dext/com.apple.AppleUserHIDDrivers
+  750     1    688   0:00.13 /System/Library/DriverExtensions/com.apple.DriverKit-IOUserDockChannelSerial.dext/com.apple.DriverKit-IOUserDockChannelSerial
+  740     1   3680   0:00.45 /System/Library/CoreServices/Software Update.app/Contents/Resources/suhelperd
+  650     1   9760   1:18.06 /System/Library/PrivateFrameworks/CoreAnalytics.framework/Support/analyticsd
+  736     1   3728   0:08.00 /usr/sbin/appleh13camerad
+  735     1   2224   0:00.23 /usr/libexec/com.apple.cmio.videodriverkithostextension.systemextension/Contents/MacOS/com.apple.cmio.videodriverkithostextension
+  732     1  12832   3:11.74 /usr/libexec/searchpartyd
+  727     1    848   0:03.86 /usr/sbin/distnoted
+40521 40519   1344   0:00.00 /bin/ps
+  718     1   5408   0:23.83 /usr/sbin/WirelessRadioManagerd
+  713     1    848   0:04.27 /usr/sbin/distnoted
+  705     1    784   0:04.69 /usr/sbin/distnoted
+  711     1   4336   1:07.16 /usr/libexec/eligibilityd
+  702     1   3792   0:17.45 /System/Library/CoreServices/TimeMachine/backupd
+  699     1   5920   0:05.66 /System/Library/Frameworks/Security.framework/Versions/A/XPCServices/authd.xpc/Contents/MacOS/authd
+  695     1    384   0:04.24 /usr/sbin/mDNSResponderHelper
+  693     1  23104   1:54.31 /usr/libexec/syspolicyd
+  691     1   6352   0:35.15 /System/Library/PrivateFrameworks/BiomeStreams.framework/Support/biomed
+  590     1  18416   7:44.26 /usr/libexec/locationd
+  680     1   9888   2:59.02 /usr/sbin/mDNSResponder
+  677     1  11040   1:39.11 /usr/libexec/symptomsd
+  675     1   3840   0:03.60 /usr/libexec/containermanagerd_system
+  674     1  19296  11:35.88 /usr/libexec/airportd
+  673     1   1472   0:00.03 /usr/libexec/ApplicationFirewall/socketfilterfw
+  670     1   5552   0:03.80 /System/Library/PrivateFrameworks/BackgroundTaskManagement.framework/Resources/backgroundtaskmanagementd
+  665     1  10448  15:55.87 /usr/libexec/mobileassetd
+  662     1   7120   1:00.34 /usr/libexec/aned
+  661     1   1040   0:00.58 /usr/libexec/apfsd
+  655     1  12224   0:40.21 /usr/libexec/lsd
+  647     1   2656   0:07.05 /System/Library/CoreServices/coreservicesd
+  642     1  20080  12:07.33 /usr/libexec/runningboardd
+  566     1     16   0:00.03 /System/Library/PrivateFrameworks/CoreSpeech.framework/corespeechd_system
+  597     1   1568   0:24.49 /usr/sbin/distnoted
+  586     1   4736   0:04.10 /usr/libexec/timed
+  587     1    720   0:00.54 /System/Library/PrivateFrameworks/MobileDevice.framework/Versions/A/Resources/usbmuxd
+  616     1   5200   1:57.21 /usr/sbin/cfprefsd
+  614     1  17456   0:47.05 /System/Library/PrivateFrameworks/TCC.framework/Support/tccd
+  558     1     48   0:00.03 /usr/libexec/IOMFB_bics_daemon
+  547     1   9392   0:09.27 /System/Library/PrivateFrameworks/MediaRemote.framework/Support/mediaremoted
+  551     1   7216   0:14.00 /usr/sbin/systemstats
+  581     1   8432   1:08.71 /System/Library/PrivateFrameworks/CoreDuetContext.framework/Resources/contextstored
+  610     1   6080   0:03.55 /System/Library/Frameworks/CoreMediaIO.framework/Versions/A/Resources/com.apple.cmio.registerassistantservice
+  604     1   2080   0:03.16 /usr/libexec/usermanagerd
+  601     1   4480   0:01.33 /System/Library/PrivateFrameworks/GenerationalStorage.framework/Versions/A/Support/revisiond
+  585     1  11360   1:39.28 /System/Library/CoreServices/launchservicesd
+  578     1   1680   0:13.08 /usr/sbin/syslogd
+  602     1     80   0:00.02 /usr/sbin/KernelEventAgent
+  588     1   6944   0:15.31 /usr/sbin/securityd
+  562     1   1152   0:00.25 /usr/libexec/remoted
+  555     1   6144   1:05.31 /usr/libexec/configd
+  593     1     48   0:00.04 autofsd
+  594     1  15920   5:06.66 /usr/libexec/dasd
+  584     1  12272   0:40.13 /System/Library/PrivateFrameworks/ApplePushService.framework/apsd
+  580     1   2224   0:19.28 /usr/libexec/thermalmonitord
+  600     1   3456   0:00.39 /System/Library/CoreServices/logind
+  582     1  10368   0:00.26 /usr/libexec/xprotectd
+  574     1   3184   0:18.47 /usr/libexec/diskarbitrationd
+  573     1   1200   0:01.19 /usr/libexec/kernelmanagerd
+  571     1  24304   8:55.18 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds
+  568     1    960   0:04.55 /usr/libexec/watchdogd
+  546     1   4544   4:27.12 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
+  544     1   8560   0:31.47 /usr/libexec/UserEventAgent
+  722     1    848   0:04.02 /usr/sbin/distnoted
+40519 39550   2576   0:00.00 /bin/zsh
+40516     1  19488   0:00.08 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared
+40498     1   5632   0:00.03 /System/Library/PrivateFrameworks/NearFieldPrivateServices.framework/Versions/A/XPCServices/NFStorageServer.xpc/Contents/MacOS/NFStorageServer
+40497     1  11280   0:00.16 /usr/libexec/nfcd
+40496     1  10192   0:00.07 /usr/libexec/AirPlayXPCHelper
+40480     1   6464   0:00.06 /usr/libexec/powerexperienced
+40476     1   9904   0:00.17 /usr/libexec/ospredictiond
+40475     1  24960   0:00.13 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared
+40471     1  26000   0:00.17 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared
+40449     1   4016   0:00.06 /usr/libexec/feedbackd
+40446     1   9248   0:00.12 /usr/libexec/assessmentagent
+40445     1   8688   0:00.07 /usr/libexec/rtcreportingd
+40444     1   8608   0:00.10 /usr/libexec/audioanalyticsd
+40443     1  29904   0:01.47 /usr/libexec/replayd
+40440     1  18960   0:00.27 /System/Library/CoreServices/Keychain Circle Notification.app/Contents/MacOS/Keychain Circle Notification
+40424     1  13024   0:00.20 /System/Library/PrivateFrameworks/AOSKit.framework/Versions/A/XPCServices/com.apple.iCloudHelper.xpc/Contents/MacOS/com.apple.iCloudHelper
+40344     1    576   0:00.03 /System/Library/CoreServices/ReportCrash
+40343     1   8832   0:00.18 /System/Library/PrivateFrameworks/XprotectFramework.framework/Versions/A/XPCServices/XprotectService.xpc/Contents/MacOS/XprotectService
+40197     1   6000   0:00.17 /System/Library/PrivateFrameworks/ProtectedCloudStorage.framework/Helpers/ProtectedCloudKeySyncing
+39810     1   7904   0:00.16 /usr/libexec/seserviced
+39786     1    448   0:00.09 /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd
+39611     1   9664   0:00.35 /usr/libexec/appleaccountd
+39610     1  11216   0:00.15 /System/Library/PrivateFrameworks/FamilyCircle.framework/Versions/A/Resources/familycircled
+39563 29248   1328   0:00.02 /bin/zsh
+39549 29072    784   0:00.00 /Applications/Claude.app/Contents/Helpers/disclaimer
+39470     1   8224   0:00.21 /System/Library/PrivateFrameworks/UsageTracking.framework/Versions/A/UsageTrackingAgent
+39468 23641 112032   0:00.27 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
+39467 23641 117456   0:00.33 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/153.0.8010.48/Helpers/Google Chrome Helper (Renderer).app/Contents/MacOS/Google Chrome Helper (Renderer)
