@@ -150,25 +150,32 @@ public enum SelfTest {
 
         do {
             let db = try Database(url: tmp)
-            let now = Date()
+            // Anchor to a minute boundary. Six samples ten seconds apart span fifty
+            // seconds, which straddles a minute boundary for most start offsets and
+            // would then legitimately roll into two buckets — making the assertion
+            // below pass or fail depending on what time the test happened to run.
+            let epoch = (Date().timeIntervalSince1970 / 60).rounded(.down) * 60
+            let now = Date(timeIntervalSince1970: epoch)
 
-            func snapshot(ageSeconds: Double, cpuMS: Int, netIn: UInt64) -> Snapshot {
-                Snapshot(date: now.addingTimeInterval(-ageSeconds), interval: 10,
+            func snapshot(at offset: Double, cpuMS: Int, netIn: UInt64) -> Snapshot {
+                Snapshot(date: Date(timeIntervalSince1970: epoch + offset), interval: 10,
                          apps: [AppUsage(name: "TestApp", bundlePath: nil, cpuMS: cpuMS,
                                          rssKB: 100_000, netIn: netIn, netOut: 0,
                                          diskRead: 5, diskWritten: 7, processCount: 1)],
                          isGap: false)
             }
 
-            // Six samples inside one minute, 30 hours ago: must collapse to ONE row.
+            // Six samples within a single aligned minute, 30 hours ago: must collapse
+            // to exactly ONE row.
+            let oldBase = -30.0 * 3600
             for i in 0..<6 {
-                try db.insert(snapshot: snapshot(ageSeconds: 30 * 3600 + Double(i * 10),
+                try db.insert(snapshot: snapshot(at: oldBase + Double(i * 10),
                                                  cpuMS: 100, netIn: 1000))
             }
             // Recent sample: must survive at full resolution.
-            try db.insert(snapshot: snapshot(ageSeconds: 60, cpuMS: 500, netIn: 42))
+            try db.insert(snapshot: snapshot(at: -60, cpuMS: 500, netIn: 42))
             // Ancient sample, beyond the retention window: must disappear entirely.
-            try db.insert(snapshot: snapshot(ageSeconds: 9 * 24 * 3600, cpuMS: 900, netIn: 7))
+            try db.insert(snapshot: snapshot(at: -9 * 24 * 3600, cpuMS: 900, netIn: 7))
 
             c.equal("retention: fine rows before", try db.count("sample_fine"), 8)
 
