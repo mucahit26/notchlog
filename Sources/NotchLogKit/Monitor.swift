@@ -7,7 +7,11 @@ import Foundation
 /// live view feels responsive, but samples are *accumulated* and still persisted on the
 /// configured logging interval. That keeps the stored resolution honest — a 2 s delta
 /// written into a 10 s row would under-report by 5x — without paying for a second sampler.
-public final class Monitor {
+/// `@unchecked Sendable`: every piece of mutable state below is confined to `queue`
+/// (timers, the accumulator, the fast-mode flag) or held in an atomic box (the latest
+/// snapshot and the callbacks). `start`/`stop`/`setFastMode` may be called from the main
+/// thread, so they hop onto `queue` rather than touching the timers directly.
+public final class Monitor: @unchecked Sendable {
     public struct Config: Sendable {
         public var logInterval: TimeInterval = 10
         public var fastInterval: TimeInterval = 2
@@ -19,11 +23,20 @@ public final class Monitor {
     /// Most recent sample, safe to read from any thread.
     public var latest: Snapshot? { latestBox.get() }
 
+    private let snapshotHandler = Atomic<(@Sendable (Snapshot) -> Void)?>(nil)
+    private let errorHandler = Atomic<(@Sendable (String) -> Void)?>(nil)
+
     /// Called on the main queue after every sample, including fast ones.
-    public var onSnapshot: (@Sendable (Snapshot) -> Void)?
+    public var onSnapshot: (@Sendable (Snapshot) -> Void)? {
+        get { snapshotHandler.get() }
+        set { snapshotHandler.set(newValue) }
+    }
     /// Errors are surfaced as text: `Error` is not `Sendable`, and a message is all
     /// the UI needs in order to show a warning badge.
-    public var onError: (@Sendable (String) -> Void)?
+    public var onError: (@Sendable (String) -> Void)? {
+        get { errorHandler.get() }
+        set { errorHandler.set(newValue) }
+    }
 
     private let sampler: Sampler
     private let db: Database
@@ -53,23 +66,29 @@ public final class Monitor {
 
     public func start() {
         observeWorkspace()
-        scheduleSampling(interval: config.logInterval)
+        let interval = config.logInterval
+        let retentionInterval = config.retentionCheckInterval
+        queue.async { [weak self] in
+            guard let self else { return }
+            self.scheduleSamplingLocked(interval: interval)
 
-        // Catch-up run: if the machine was off for days, the first launch should tidy up
-        // immediately rather than waiting for the first periodic check.
-        queue.async { [weak self] in self?.runRetention() }
-        let rt = DispatchSource.makeTimerSource(queue: queue)
-        rt.schedule(deadline: .now() + config.retentionCheckInterval,
-                    repeating: config.retentionCheckInterval)
-        rt.setEventHandler { [weak self] in self?.runRetention() }
-        rt.resume()
-        retentionTimer = rt
+            // Catch-up run: if the machine was off for days, the first launch should tidy
+            // up immediately rather than waiting for the first periodic check.
+            self.runRetention()
+            let rt = DispatchSource.makeTimerSource(queue: self.queue)
+            rt.schedule(deadline: .now() + retentionInterval, repeating: retentionInterval)
+            rt.setEventHandler { [weak self] in self?.runRetention() }
+            rt.resume()
+            self.retentionTimer = rt
+        }
     }
 
     public func stop() {
-        timer?.cancel(); timer = nil
-        retentionTimer?.cancel(); retentionTimer = nil
         NSWorkspace.shared.notificationCenter.removeObserver(self)
+        queue.sync {
+            timer?.cancel(); timer = nil
+            retentionTimer?.cancel(); retentionTimer = nil
+        }
     }
 
     /// Switch to the fast cadence while the panel is open.
@@ -77,11 +96,13 @@ public final class Monitor {
         queue.async { [weak self] in
             guard let self, self.fast != enabled else { return }
             self.fast = enabled
-            self.scheduleSampling(interval: enabled ? self.config.fastInterval : self.config.logInterval)
+            self.scheduleSamplingLocked(
+                interval: enabled ? self.config.fastInterval : self.config.logInterval)
         }
     }
 
-    private func scheduleSampling(interval: TimeInterval) {
+    /// Must be called on `queue`.
+    private func scheduleSamplingLocked(interval: TimeInterval) {
         timer?.cancel()
         let t = DispatchSource.makeTimerSource(queue: queue)
         // A generous leeway lets the OS coalesce our wakeups with other timers, which
@@ -98,7 +119,7 @@ public final class Monitor {
         do {
             let snap = try sampler.tick()
             latestBox.set(snap)
-            if let cb = onSnapshot { DispatchQueue.main.async { cb(snap) } }
+            if let cb = snapshotHandler.get() { DispatchQueue.main.async { cb(snap) } }
             guard !snap.isGap else {
                 pending.removeAll(); pendingSeconds = 0
                 try? db.recordGap(at: snap.date, seconds: Int(snap.interval),
@@ -113,7 +134,7 @@ public final class Monitor {
     }
 
     private func report(_ error: Error) {
-        guard let cb = onError else { return }
+        guard let cb = errorHandler.get() else { return }
         let message = String(describing: error)
         DispatchQueue.main.async { cb(message) }
     }

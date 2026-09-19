@@ -17,7 +17,11 @@ public enum DatabaseError: Error {
 /// resolution because that is exactly the window the .txt export covers, while older
 /// days are rolled down to one-minute rows. That holds a detailed week at roughly
 /// 80-150 MB instead of the ~500 MB a flat 7-day-at-10-seconds table would need.
-public final class Database {
+/// `@unchecked Sendable` is accurate rather than a shortcut: the connection is opened
+/// once in `init` and never reassigned, and every subsequent read, write and cache
+/// mutation happens inside `queue`. The connection itself is opened `FULLMUTEX`, so
+/// SQLite serialises internally as well.
+public final class Database: @unchecked Sendable {
     private var db: OpaquePointer?
     private let queue = DispatchQueue(label: "com.mucahit26.notchlog.db")
 
