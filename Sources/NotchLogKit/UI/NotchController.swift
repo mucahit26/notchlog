@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 /// Container view whose only job is to report that the cursor arrived.
@@ -9,6 +10,60 @@ import SwiftUI
 final class HoverHostView: NSView {
     var onEnter: (() -> Void)?
     var onExit: (() -> Void)?
+    /// -1 for "previous page", +1 for "next page".
+    var onSwipe: ((Int) -> Void)?
+
+    private var accumulatedX: CGFloat = 0
+    private var accumulatedY: CGFloat = 0
+    private var lastFlip = Date.distantPast
+
+    /// Two-finger horizontal swipe, verified to reach this panel even though it never
+    /// becomes key and the app is never frontmost — `scrollWheel` is delivered by hit
+    /// test, so it needs no permission.
+    ///
+    /// Two things in the raw event stream will misfire if ignored, both observed live:
+    ///  * **Momentum.** Inertia keeps delivering events after the fingers lift, which
+    ///    would flip a second page for one gesture.
+    ///  * **Vertical scrolling.** It arrives through the same callback, so a gesture is
+    ///    only accepted when it is clearly more horizontal than vertical.
+    override func scrollWheel(with event: NSEvent) {
+        guard event.momentumPhase == [] else { return }
+
+        if event.hasPreciseScrollingDeltas {
+            switch event.phase {
+            case .began:
+                accumulatedX = 0
+                accumulatedY = 0
+            case .changed:
+                accumulatedX += event.scrollingDeltaX
+                accumulatedY += event.scrollingDeltaY
+            case .ended, .cancelled:
+                commitSwipe(threshold: 40)
+            default:
+                break
+            }
+        } else {
+            // A classic mouse wheel has no phases, so accumulate and fire on threshold.
+            accumulatedX += event.scrollingDeltaX
+            accumulatedY += event.scrollingDeltaY
+            commitSwipe(threshold: 6)
+        }
+    }
+
+    private func commitSwipe(threshold: CGFloat) {
+        guard abs(accumulatedX) >= threshold,
+              abs(accumulatedX) > abs(accumulatedY) * 1.5,
+              Date().timeIntervalSince(lastFlip) > 0.35 else {
+            if abs(accumulatedX) >= threshold { accumulatedX = 0; accumulatedY = 0 }
+            return
+        }
+        lastFlip = Date()
+        // Swipe left (negative delta) moves forward, matching Safari's page gesture.
+        let direction = accumulatedX < 0 ? 1 : -1
+        accumulatedX = 0
+        accumulatedY = 0
+        onSwipe?(direction)
+    }
 
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
@@ -28,18 +83,24 @@ public final class NotchController {
     private let host: NSHostingView<ExpandedView>
     private let container: HoverHostView
     private let model = LiveModel()
+    private let panelState = PanelState()
+    private let calendarModel: CalendarModel
+    private let calendarService = CalendarService()
     private let hover = HoverTracker()
     private let monitor: Monitor
     private var geometry: NotchGeometry
+    private var pageObserver: AnyCancellable?
 
     public init(monitor: Monitor) {
         self.monitor = monitor
         let screen = NSScreen.main ?? NSScreen.screens[0]
         self.geometry = NotchGeometry.current(for: screen)
+        self.calendarModel = CalendarModel(database: monitor.database)
 
         let model = self.model
         self.host = NSHostingView(rootView: ExpandedView(
-            model: model, topInset: geometry.contentTopInset,
+            model: model, panel: panelState, calendarModel: calendarModel,
+            calendarService: calendarService, topInset: geometry.contentTopInset,
             onExport: {}, onRevealData: {}, onQuit: {}))
         self.container = HoverHostView(frame: NSRect(origin: .zero, size: geometry.collapsed.size))
         self.panel = NSPanel(contentRect: geometry.collapsed,
@@ -77,6 +138,15 @@ public final class NotchController {
 
         container.onEnter = { [weak self] in self?.hover.cursorEnteredCollapsedArea() }
         container.onExit = { [weak self] in self?.hover.cursorLeftCollapsedArea() }
+        container.onSwipe = { [weak self] direction in
+            guard let self, self.hover.isOpen else { return }
+            self.panelState.advance(by: direction)
+        }
+        pageObserver = panelState.$page
+            .removeDuplicates()
+            .sink { [weak self] page in
+                Task { @MainActor in self?.pageChanged(to: page) }
+            }
         hover.onOpen = { [weak self] in self?.expand() }
         hover.onClose = { [weak self] in self?.collapse() }
 
@@ -100,7 +170,8 @@ public final class NotchController {
 
     private func makeRootView() -> ExpandedView {
         ExpandedView(
-            model: model, topInset: geometry.contentTopInset,
+            model: model, panel: panelState, calendarModel: calendarModel,
+            calendarService: calendarService, topInset: geometry.contentTopInset,
             onExport: { [weak self] in self?.export() },
             onRevealData: {
                 NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Paths.root.path)
@@ -116,8 +187,26 @@ public final class NotchController {
 
     // MARK: - expand / collapse
 
+    /// Resize to the page's own height, and do the calendar's lazy setup the first time
+    /// page 2 is shown — which is the only moment NotchLog ever asks macOS for anything.
+    private func pageChanged(to page: Int) {
+        if page == 1 {
+            calendarService.requestAccessIfNeeded()
+            calendarModel.reloadMonth(eventDays: calendarService.daysWithEvents(in: calendarModel.month))
+            calendarModel.reloadSelectedDay()
+        }
+        guard hover.isOpen else { return }
+        let target = geometry.expanded(forPage: page)
+        hover.activeFrame = target
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.24
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            panel.animator().setFrame(target, display: true)
+        }
+    }
+
     private func expand() {
-        let target = geometry.expanded
+        let target = geometry.expanded(forPage: panelState.page)
         hover.activeFrame = target
         model.databaseBytes = monitor.database.fileSizeBytes
         monitor.setFastMode(true)
@@ -133,6 +222,8 @@ public final class NotchController {
 
     private func collapse() {
         monitor.setFastMode(false)
+        // Always reopen on the live page; the calendar is something you go to.
+        panelState.page = 0
         model.exportStatus = nil
         let target = geometry.collapsed
         hover.activeFrame = target
@@ -152,7 +243,7 @@ public final class NotchController {
         let screen = NSScreen.main ?? NSScreen.screens[0]
         geometry = NotchGeometry.current(for: screen)
         host.rootView = makeRootView()
-        let frame = hover.isOpen ? geometry.expanded : geometry.collapsed
+        let frame = hover.isOpen ? geometry.expanded(forPage: panelState.page) : geometry.collapsed
         hover.activeFrame = frame
         panel.setFrame(frame, display: true)
     }

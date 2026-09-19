@@ -189,3 +189,93 @@ public extension Database {
         }
     }
 }
+
+// MARK: - calendar
+
+/// One local calendar day's totals, for the heat map.
+public struct DayActivity: Sendable, Equatable {
+    public var day: Int              // YYYYMMDD, local
+    public var cpuMS: Int64
+    public var netBytes: Int64
+    public var sampledSeconds: Int64
+}
+
+public struct DayApp: Sendable, Equatable, Identifiable {
+    public var name: String
+    public var cpuMS: Int64
+    public var netBytes: Int64
+    public var rssMaxKB: Int64
+    public var id: String { name }
+}
+
+public extension Database {
+    /// Daily totals across a date range, keyed by `YYYYMMDD`.
+    ///
+    /// Reads `sample_fine` and `sample_day` only. It must NOT also read
+    /// `sample_minute`: rows older than 24 h are written into *both* the minute table
+    /// and the daily table by the same retention pass, so including all three would
+    /// double-count every day but today. `sample_fine` (< 24 h) and `sample_day`
+    /// (>= 24 h) are disjoint by construction.
+    func dailyActivity(from: Int, to: Int) throws -> [Int: DayActivity] {
+        try sync {
+            let stmt = try prepareRaw("""
+            WITH merged AS (
+                SELECT CAST(strftime('%Y%m%d', ts, 'unixepoch', 'localtime') AS INTEGER) AS day,
+                       cpu_ms AS cpu, net_in + net_out AS net, 10 AS secs
+                  FROM sample_fine
+                UNION ALL
+                SELECT day, cpu_ms, net_in + net_out, sampled_s FROM sample_day
+            )
+            SELECT day, SUM(cpu), SUM(net), SUM(secs)
+              FROM merged WHERE day >= ? AND day <= ?
+             GROUP BY day;
+            """)
+            defer { sqlite3_finalize(stmt) }
+            sqlite3_bind_int64(stmt, 1, Int64(from))
+            sqlite3_bind_int64(stmt, 2, Int64(to))
+
+            var out: [Int: DayActivity] = [:]
+            while sqlite3_step(stmt) == SQLITE_ROW {
+                let day = Int(sqlite3_column_int64(stmt, 0))
+                out[day] = DayActivity(day: day,
+                                       cpuMS: sqlite3_column_int64(stmt, 1),
+                                       netBytes: sqlite3_column_int64(stmt, 2),
+                                       sampledSeconds: sqlite3_column_int64(stmt, 3))
+            }
+            return out
+        }
+    }
+
+    /// Busiest apps on one local day. Same disjointness argument as `dailyActivity`.
+    func apps(onDay day: Int, limit: Int = 6) throws -> [DayApp] {
+        try sync {
+            let stmt = try prepareRaw("""
+            WITH merged AS (
+                SELECT CAST(strftime('%Y%m%d', ts, 'unixepoch', 'localtime') AS INTEGER) AS day,
+                       app_id, cpu_ms AS cpu, net_in + net_out AS net, rss_kb AS rss
+                  FROM sample_fine
+                UNION ALL
+                SELECT day, app_id, cpu_ms, net_in + net_out, rss_kb_max FROM sample_day
+            )
+            SELECT app.name, SUM(m.cpu), SUM(m.net), MAX(m.rss)
+              FROM merged m JOIN app ON app.id = m.app_id
+             WHERE m.day = ?
+             GROUP BY m.app_id
+             ORDER BY SUM(m.cpu) DESC
+             LIMIT ?;
+            """)
+            defer { sqlite3_finalize(stmt) }
+            sqlite3_bind_int64(stmt, 1, Int64(day))
+            sqlite3_bind_int64(stmt, 2, Int64(limit))
+
+            var out: [DayApp] = []
+            while sqlite3_step(stmt) == SQLITE_ROW {
+                out.append(DayApp(name: String(cString: sqlite3_column_text(stmt, 0)),
+                                  cpuMS: sqlite3_column_int64(stmt, 1),
+                                  netBytes: sqlite3_column_int64(stmt, 2),
+                                  rssMaxKB: sqlite3_column_int64(stmt, 3)))
+            }
+            return out
+        }
+    }
+}

@@ -11,16 +11,26 @@ import SwiftUI
 /// interval share no scale, and a bar that spanned two of them would be meaningless.
 public struct ExpandedView: View {
     @ObservedObject var model: LiveModel
+    @ObservedObject var panel: PanelState
+    @ObservedObject var calendarModel: CalendarModel
+    @ObservedObject var calendarService: CalendarService
     let topInset: CGFloat
     let onExport: () -> Void
     let onRevealData: () -> Void
     let onQuit: () -> Void
 
-    public init(model: LiveModel, topInset: CGFloat,
+    public init(model: LiveModel,
+                panel: PanelState,
+                calendarModel: CalendarModel,
+                calendarService: CalendarService,
+                topInset: CGFloat,
                 onExport: @escaping () -> Void,
                 onRevealData: @escaping () -> Void = {},
                 onQuit: @escaping () -> Void) {
         self.model = model
+        self.panel = panel
+        self.calendarModel = calendarModel
+        self.calendarService = calendarService
         self.topInset = topInset
         self.onExport = onExport
         self.onRevealData = onRevealData
@@ -45,6 +55,37 @@ public struct ExpandedView: View {
     private var content: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
+            pages
+            PageDots(current: panel.page, count: PanelState.pageCount) { panel.page = $0 }
+                .frame(maxWidth: .infinity)
+            Divider().opacity(0.4)
+            footer
+        }
+        .padding(.horizontal, 18)
+        .padding(.bottom, 12)
+        .padding(.top, 10)
+    }
+
+    @ViewBuilder
+    private var pages: some View {
+        ZStack {
+            if panel.page == 0 {
+                metricsPage
+                    .transition(.asymmetric(insertion: .move(edge: .leading).combined(with: .opacity),
+                                            removal: .move(edge: .leading).combined(with: .opacity)))
+            } else {
+                CalendarPage(model: calendarModel, calendarService: calendarService)
+                    .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
+                                            removal: .move(edge: .trailing).combined(with: .opacity)))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .clipped()
+        .animation(.easeOut(duration: 0.24), value: panel.page)
+    }
+
+    private var metricsPage: some View {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 18) {
                 MetricColumn(title: "CPU", accent: Palette.cpu, rows: model.topCPU, model: model,
                              value: { Format.percent($0.cpuPercent(interval: model.interval)) },
@@ -66,12 +107,7 @@ public struct ExpandedView: View {
                              })
             }
             diskLine
-            Divider().opacity(0.4)
-            footer
         }
-        .padding(.horizontal, 18)
-        .padding(.bottom, 12)
-        .padding(.top, 10)
     }
 
     // MARK: - header
@@ -260,5 +296,27 @@ private struct MetricRow: View {
             .frame(height: 3)
         }
         .padding(.leading, 0)
+    }
+}
+
+
+/// Page indicator. Clickable as well as swipeable — a gesture with no visible
+/// affordance is a feature nobody discovers.
+private struct PageDots: View {
+    let current: Int
+    let count: Int
+    let select: (Int) -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(0..<count, id: \.self) { index in
+                Circle()
+                    .fill(index == current ? Color.primary.opacity(0.65)
+                                           : Color.primary.opacity(0.18))
+                    .frame(width: 5, height: 5)
+                    .onTapGesture { select(index) }
+            }
+        }
+        .help("Swipe left or right with two fingers to switch pages")
     }
 }

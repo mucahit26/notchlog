@@ -197,7 +197,30 @@ public enum SelfTest {
             c.equal("retention: idempotent on minute rows", try db.count("sample_minute"), 1)
             c.equal("retention: idempotent on fine rows", try db.count("sample_fine"), 1)
 
+            // --- daily summary, which the calendar heat map reads ---------------------
+            // The 30-hour-old samples must also have landed in sample_day, totals intact.
+            let oldDay = Retention.dayKey(for: Date(timeIntervalSince1970: epoch + oldBase))
+            let daily = try db.dailyActivity(from: oldDay, to: oldDay)
+            c.equal("daily: bucket exists", daily[oldDay] != nil, true)
+            c.equal("daily: CPU total preserved", daily[oldDay]?.cpuMS, 600)
+            c.equal("daily: byte total preserved", daily[oldDay]?.netBytes, 6000)
+
+            let dayApps = try db.apps(onDay: oldDay)
+            c.equal("daily: app attribution preserved", dayApps.first?.name, "TestApp")
+
+            // A second pass must not double the daily totals — the ON CONFLICT clause
+            // adds rather than replaces, so this only holds because the fine rows that
+            // fed it were deleted in the same transaction.
+            _ = try Retention().run(on: db, now: now)
+            let again = try db.dailyActivity(from: oldDay, to: oldDay)
+            c.equal("daily: rollup is not double-counted", again[oldDay]?.cpuMS, 600)
+
+            let todayKey = Retention.dayKey(for: now)
+            let todayActivity = try db.dailyActivity(from: todayKey, to: todayKey)
+            c.equal("daily: today comes from the fine table", todayActivity[todayKey]?.cpuMS, 500)
+
             log("  retention: 8 fine rows -> 1 recent + 1 rolled minute bucket, purge verified")
+            log("  daily: rollup preserved totals and stayed idempotent across two passes")
         } catch {
             c.report.failures.append("retention check failed: \(error)")
         }

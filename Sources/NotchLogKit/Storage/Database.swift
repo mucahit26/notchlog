@@ -84,6 +84,24 @@ public final class Database: @unchecked Sendable {
             PRIMARY KEY (ts, app_id)
         ) WITHOUT ROWID;
 
+        -- One row per local calendar day per app, kept for a year. This is what the
+        -- calendar heat map reads: the 7-day detail tables cannot answer "how busy was
+        -- this machine in March". The key is the local date as YYYYMMDD rather than an
+        -- epoch, because "which day was this" is a local-calendar question and an epoch
+        -- key would need a timezone convention that DST changes would break.
+        CREATE TABLE IF NOT EXISTS sample_day (
+            day        INTEGER NOT NULL,   -- YYYYMMDD, local
+            app_id     INTEGER NOT NULL REFERENCES app(id),
+            cpu_ms     INTEGER NOT NULL,
+            rss_kb_max INTEGER NOT NULL,
+            net_in     INTEGER NOT NULL,
+            net_out    INTEGER NOT NULL,
+            disk_r     INTEGER,
+            disk_w     INTEGER,
+            sampled_s  INTEGER NOT NULL,
+            PRIMARY KEY (day, app_id)
+        ) WITHOUT ROWID;
+
         CREATE TABLE IF NOT EXISTS app_event (
             ts     INTEGER NOT NULL,
             app_id INTEGER NOT NULL REFERENCES app(id),

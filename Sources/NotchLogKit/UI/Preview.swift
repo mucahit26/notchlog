@@ -9,16 +9,29 @@ import SwiftUI
 /// wide dynamic range that break layouts.
 @MainActor
 public enum PanelPreview {
-    public static func render(to url: URL, dark: Bool = true) throws {
+    public static func render(to url: URL, dark: Bool = true, page: Int = 0,
+                              database: Database? = nil) throws {
         let model = LiveModel()
         model.apply(sampleSnapshot())
         model.databaseBytes = 34_500_000
         model.exportStatus = nil
 
-        let view = ExpandedView(model: model, topInset: 45,
+        let panelState = PanelState()
+        panelState.page = page
+        let db = try database ?? seededDatabase()
+        let calendarModel = CalendarModel(database: db)
+        let calendarService = CalendarService()
+        if page == 1 {
+            calendarModel.reloadMonth()
+            calendarModel.reloadSelectedDay()
+        }
+
+        let pageSize = NotchGeometry.size(forPage: page)
+        let view = ExpandedView(model: model, panel: panelState,
+                                calendarModel: calendarModel, calendarService: calendarService,
+                                topInset: 45,
                                 onExport: {}, onRevealData: {}, onQuit: {})
-            .frame(width: NotchGeometry.expandedSize.width,
-                   height: NotchGeometry.expandedSize.height)
+            .frame(width: pageSize.width, height: pageSize.height)
             // The material background has no backdrop to sample offscreen, so the
             // preview puts a plain surface behind it to keep the render readable.
             .background(dark ? Color(white: 0.12) : Color(white: 0.92))
@@ -27,7 +40,7 @@ public enum PanelPreview {
         // through ImageRenderer. ImageRenderer does not resolve a bare
         // Image(systemName:) — it substitutes the "missing image" placeholder — so a
         // preview built on it reports icon bugs that do not exist and hides ones that do.
-        let size = NotchGeometry.expandedSize
+        let size = pageSize
         let appearance = NSAppearance(named: dark ? .darkAqua : .aqua)!
 
         let hosting = NSHostingView(rootView: AnyView(view))
@@ -56,6 +69,46 @@ public enum PanelPreview {
             throw CocoaError(.fileWriteUnknown)
         }
         try png.write(to: url)
+    }
+
+    /// A throwaway database holding a month of synthetic history.
+    ///
+    /// Seeded by inserting dated snapshots and then running the real retention pass, so
+    /// the preview exercises the actual daily-rollup path rather than writing
+    /// `sample_day` rows directly — if the rollup breaks, the heat map goes blank here.
+    static func seededDatabase() throws -> Database {
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("notchlog-preview-\(UUID().uuidString).sqlite")
+        let db = try Database(url: url)
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        let names = ["Google Chrome", "Claude", "Xcode", "Slack", "Spotify", "WindowServer"]
+
+        for back in 0..<34 {
+            guard let day = cal.date(byAdding: .day, value: -back, to: today) else { continue }
+            // A plausible weekly rhythm: weekends much quieter than weekdays.
+            let weekday = cal.component(.weekday, from: day)
+            let weekend = (weekday == 1 || weekday == 7)
+            let load = weekend ? 0.15 : Double((back * 37) % 100) / 100 * 0.8 + 0.2
+            if back > 2 && (back % 11) == 5 { continue }   // a couple of days with no data
+
+            for slot in 0..<4 {
+                let ts = day.addingTimeInterval(Double(9 + slot * 3) * 3600)
+                let apps = names.enumerated().map { index, name in
+                    AppUsage(name: name, bundlePath: nil,
+                             cpuMS: Int(load * Double(3_000 - index * 400)),
+                             rssKB: 400_000 - index * 50_000,
+                             netIn: UInt64(load * Double(900_000 - index * 120_000)),
+                             netOut: UInt64(load * 90_000),
+                             diskRead: 4_096, diskWritten: 8_192, processCount: 1)
+                }
+                try db.insert(snapshot: Snapshot(date: ts, interval: 10,
+                                                 apps: apps, isGap: false))
+            }
+        }
+        // Roll everything older than 24 h down into the daily table.
+        _ = try Retention().run(on: db)
+        return db
     }
 
     static func sampleSnapshot() -> Snapshot {

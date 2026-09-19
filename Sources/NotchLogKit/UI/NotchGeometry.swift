@@ -37,14 +37,20 @@ public struct NotchGeometry: Sendable {
                              centerX: frame.midX, topY: frame.maxY - band, screenFrame: frame)
     }
 
-    /// Sized to fit the content exactly. The layout is a fixed five rows per column,
-    /// so a taller panel just puts a void between the columns and the footer.
-    /// Height = notch band (45) + header + 5 rows + footer + padding.
-    public static let expandedSize = NSSize(width: 660, height: 312)
+    /// Each page is sized to fit its own content. A single height sized for the taller
+    /// page would leave the other one half empty, so the panel animates between them.
+    public static let expandedSize = NSSize(width: 660, height: 328)
+    public static let calendarSize = NSSize(width: 660, height: 382)
+
+    public static func size(forPage page: Int) -> NSSize {
+        page == 1 ? calendarSize : expandedSize
+    }
 
     /// Expanded panel, centred on the notch and clamped to stay on screen.
-    public var expanded: NSRect {
-        let size = NotchGeometry.expandedSize
+    public var expanded: NSRect { expanded(forPage: 0) }
+
+    public func expanded(forPage page: Int) -> NSRect {
+        let size = NotchGeometry.size(forPage: page)
         var x = centerX - size.width / 2
         x = min(max(x, screenFrame.minX + 8), screenFrame.maxX - size.width - 8)
         let y = topY - size.height

@@ -16,6 +16,9 @@ import SQLite3
 public struct Retention: Sendable {
     public var fineWindow: TimeInterval = 24 * 3600
     public var totalWindow: TimeInterval = 7 * 24 * 3600
+    /// Daily summaries are tiny — a few dozen rows per day — so they are kept far
+    /// longer, which is what makes a calendar heat map worth having.
+    public var dailyWindowDays: Int = 365
     public init() {}
 
     public struct Result: Sendable {
@@ -40,6 +43,29 @@ public struct Retention: Sendable {
 
             try db.execRaw("BEGIN IMMEDIATE;")
             do {
+                // --- daily summary --------------------------------------------------
+                // Accumulated BEFORE the fine rows are deleted, in the same transaction,
+                // so each fine row contributes exactly once. ON CONFLICT adds rather than
+                // replaces, because a single day is rolled up across many runs.
+                try db.execRaw("""
+                INSERT INTO sample_day
+                    (day, app_id, cpu_ms, rss_kb_max, net_in, net_out, disk_r, disk_w, sampled_s)
+                SELECT CAST(strftime('%Y%m%d', ts, 'unixepoch', 'localtime') AS INTEGER) AS d,
+                       app_id, SUM(cpu_ms), MAX(rss_kb), SUM(net_in), SUM(net_out),
+                       SUM(disk_r), SUM(disk_w), COUNT(*) * 10
+                FROM sample_fine
+                WHERE ts < \(fineCutoff)
+                GROUP BY d, app_id
+                ON CONFLICT(day, app_id) DO UPDATE SET
+                    cpu_ms     = cpu_ms + excluded.cpu_ms,
+                    rss_kb_max = MAX(rss_kb_max, excluded.rss_kb_max),
+                    net_in     = net_in + excluded.net_in,
+                    net_out    = net_out + excluded.net_out,
+                    disk_r     = COALESCE(disk_r, 0) + COALESCE(excluded.disk_r, 0),
+                    disk_w     = COALESCE(disk_w, 0) + COALESCE(excluded.disk_w, 0),
+                    sampled_s  = sampled_s + excluded.sampled_s;
+                """)
+
                 // --- rollup ---------------------------------------------------------
                 // SUM over disk columns yields NULL only when every contributing row is
                 // NULL, which is exactly the semantics we want: "nothing was readable".
@@ -71,11 +97,16 @@ public struct Retention: Sendable {
                 result.purgedEvents = db.changes
                 try db.execRaw("DELETE FROM gap WHERE ts < \(hardCutoff);")
 
+                let dayCutoff = Self.dayKey(for: now.addingTimeInterval(
+                    -Double(dailyWindowDays) * 86_400))
+                try db.execRaw("DELETE FROM sample_day WHERE day < \(dayCutoff);")
+
                 // Drop apps nothing references any more, so the name table cannot grow
                 // without bound as short-lived processes come and go.
                 try db.execRaw("""
                 DELETE FROM app WHERE id NOT IN (SELECT app_id FROM sample_fine)
                                  AND id NOT IN (SELECT app_id FROM sample_minute)
+                                 AND id NOT IN (SELECT app_id FROM sample_day)
                                  AND id NOT IN (SELECT app_id FROM app_event);
                 """)
                 try db.execRaw("COMMIT;")
@@ -95,6 +126,15 @@ public struct Retention: Sendable {
             result.bytesAfter = db.fileSizeBytes
             return result
         }
+    }
+}
+
+public extension Retention {
+    /// The `YYYYMMDD` key used by `sample_day`, computed with the user's own calendar
+    /// so it matches what the month grid displays.
+    static func dayKey(for date: Date, calendar: Calendar = .current) -> Int {
+        let c = calendar.dateComponents([.year, .month, .day], from: date)
+        return (c.year ?? 0) * 10_000 + (c.month ?? 0) * 100 + (c.day ?? 0)
     }
 }
 

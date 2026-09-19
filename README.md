@@ -5,6 +5,9 @@ and it expands to show what is using your CPU, memory and network **right now**.
 that activity continuously so you can answer "what was my Mac doing at 3am?", and exports
 the last 24 hours as a plain text file.
 
+Two-finger swipe to the second page for a calendar: a month grid tinted by how hard your
+Mac worked each day, beside that day's events and busiest applications.
+
 **It has no network code at all.** Not "it doesn't phone home" — there is no networking
 in the binary, CI fails the build if any appears, and you can verify it on your own machine
 in one command.
@@ -18,6 +21,12 @@ in one command.
                     │ Chrome   Chrome   Chrome  │
                     │ Xcode    Slack    Dropbox │
                     │ [ Export last 24 hours ]  │
+                    └──────────── ● ○ ──────────┘
+                             ↕ two-finger swipe
+                    ┌───────────────────────────┐
+                    │ M T W T F S S │ Sat, 19   │      ← page 2: activity heat map
+                    │ ░▓█░▓░░       │ 10:00 …   │        + your calendar events
+                    │ █░▓█░░▓       │ Chrome 2h │
                     └───────────────────────────┘
 ```
 
@@ -31,9 +40,29 @@ it does with that.
 | Network access | **None.** No `URLSession`, no `Network` framework, no sockets. |
 | Dependencies | **None.** `Package.swift` declares zero packages — no supply chain. |
 | Privileges | **None.** No root helper, no privileged daemon, no `sudo` at install. |
-| Permission prompts | **None.** No Accessibility, Input Monitoring, Screen Recording or Full Disk Access. |
+| Permission prompts | **None for monitoring.** Calendar access is the one exception — see below. |
 | Subprocesses | Exactly two, by absolute path: `/bin/ps` and `/usr/bin/nettop`. |
 | Where data lives | `~/Library/Application Support/NotchLog/`, directory `0700`, database `0600`. |
+
+### The one permission, and how to avoid it
+
+Everything on page 1 — all the monitoring, logging and exporting — runs with **no
+permission of any kind**. No Accessibility, no Input Monitoring, no Screen Recording, no
+Full Disk Access. Hover detection and the two-finger swipe both work through ordinary
+event delivery, which needs no approval.
+
+Page 2 shows events from your Calendar, and that needs macOS Calendar access. It is:
+
+- **Lazy** — asked for the first time you open page 2, never at launch. If you never swipe
+  to the calendar, you are never asked.
+- **Optional** — deny it and the page still works. The month grid and the activity heat
+  map come from NotchLog's own database; only the event list stays empty.
+- **Read-only, and nothing is kept.** Events are read for display and dropped. They are
+  never written to the database, never exported, and there is no network to send them to.
+
+If you would rather the capability did not exist at all, delete
+`Sources/NotchLogKit/UI/CalendarService.swift` and the `NSCalendarsFullAccessUsageDescription`
+key from `Resources/Info.plist.template` before installing. Everything else still builds.
 
 ### Verify it yourself
 
@@ -117,6 +146,15 @@ Move the pointer to the notch. After a brief delay the panel expands with live t
 lists for CPU, memory and network, a disk summary, and an export button. Move away and it
 collapses. There is nothing to click to open it and nothing to dismiss.
 
+**Two pages.** Swipe horizontally with two fingers to move between them, or click the page
+dots. Swiping left goes forward, matching Safari's page gesture.
+
+1. **Live** — what is using CPU, memory and network right now.
+2. **Calendar** — a month grid where each day is tinted by how much CPU your Mac burned
+   that day, with the selected day's calendar events and busiest applications beside it.
+   Daily summaries are kept for a year, so the heat map fills in as you use it; the
+   detailed tables behind page 1 still only go back 7 days.
+
 ```bash
 notchlog selftest         # verify the parsers against your own system
 notchlog export 24        # write a report without using the UI
@@ -141,6 +179,7 @@ real limits imposed by macOS.
 | **Network** | Per-socket counters from `nettop` | A **lower bound** — see below. |
 | **Disk I/O** | `proc_pid_rusage` | **Your own processes only.** Root-owned daemons return `EPERM` and there is no unprivileged way around it. Measured: 411 of 595 processes readable. |
 | **App launch/quit** | `NSWorkspace` notifications | Accurate for GUI applications. |
+| **Calendar events** | EventKit, if you allow it | Exactly what Calendar.app shows. Read-only, never stored. |
 
 **Why CPU does not come from `ps %CPU`.** That column is a kernel *decayed average*, not an
 instantaneous reading, and it is badly wrong on bursts — during development one process
@@ -167,7 +206,9 @@ Storage is tiered, because a flat week at 10-second resolution would cost roughl
 - **Last 24 hours** — full 10-second resolution. This is exactly the window the export
   covers, so the export never loses detail.
 - **Days 2 to 7** — rolled down to one row per minute.
-- **Older than 7 days** — deleted.
+- **Older than 7 days** — deleted from the detailed tables.
+- **Daily summaries** — one small row per app per day, kept for **a year** so the calendar
+  heat map has history. A few dozen rows a day costs well under a megabyte annually.
 
 Rows that are simultaneously idle on every axis are not stored at all — on a typical
 desktop that takes roughly 400 running applications down to **64 stored rows per sample**.
@@ -231,7 +272,8 @@ panel closes only after the cursor has been outside continuously for 350 ms.
 Sources/NotchLogKit/
   Collect/   ProcessRunner, PSSource, NettopSource, DiskIOSource, AppIdentity, Sampler
   Storage/   Database, Retention, Queries, Exporter
-  UI/        NotchGeometry, HoverTracker, NotchController, LiveModel, Views
+  UI/        NotchGeometry, HoverTracker, NotchController, LiveModel, Views,
+             Palette, PanelState, CalendarPage, CalendarModel, CalendarService
   Monitor.swift, SelfTest.swift
 Sources/NotchLog/     main.swift, AppDelegate.swift
 Scripts/              install.sh, uninstall.sh, bundle.sh, verify-no-network.sh
@@ -258,6 +300,15 @@ network (lower bound). CPU should agree closely — if it does not, please open 
 
 **Nothing in the export.** It only contains what has been collected since installation.
 Coverage is stated in the report header.
+
+**The calendar heat map is mostly blank.** Daily summaries are written by the retention
+pass, which first runs on data older than 24 hours — so a fresh install shows today only,
+and fills in from there. `notchlog retention` forces a pass immediately.
+
+**Two-finger swipe does nothing.** It requires a trackpad or a Magic Mouse; a classic
+wheel mouse can scroll horizontally if it has a tilt wheel, and the page dots are always
+clickable. The gesture is ignored unless it is clearly more horizontal than vertical, so
+vertical scrolling never flips pages by accident.
 
 ## License
 

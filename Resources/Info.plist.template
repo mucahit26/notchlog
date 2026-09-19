@@ -13,5 +13,11 @@
     <key>NSHighResolutionCapable</key>       <true/>
     <!-- No Dock icon, no app switcher entry: this is a background resident. -->
     <key>LSUIElement</key>                   <true/>
+
+    <!-- Required before EventKit may be asked for access; macOS terminates a process
+         that requests it without a usage string. NotchLog only asks when the calendar
+         page is opened, only reads, and stores nothing from your calendar. -->
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>NotchLog shows your events beside a heat map of how hard your Mac worked each day. Events are read for display only — nothing is stored, and NotchLog has no network access.</string>
 </dict>
 </plist>

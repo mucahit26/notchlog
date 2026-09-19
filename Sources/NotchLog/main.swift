@@ -95,13 +95,14 @@ case "preview":
     // without putting anything on screen.
     let out = args.dropFirst().first ?? "panel.png"
     let dark = !args.contains("--light")
+    let page = args.contains("--calendar") ? 1 : 0
     MainActor.assumeIsolated {
         _ = NSApplication.shared          // SwiftUI rendering needs an app instance
         NSApp.setActivationPolicy(.prohibited)
         if !dark { NSApp.appearance = NSAppearance(named: .aqua) }
         else { NSApp.appearance = NSAppearance(named: .darkAqua) }
         do {
-            try PanelPreview.render(to: URL(fileURLWithPath: out), dark: dark)
+            try PanelPreview.render(to: URL(fileURLWithPath: out), dark: dark, page: page)
             print(out)
         } catch {
             FileHandle.standardError.write(Data("preview failed: \(error)\n".utf8))
@@ -120,7 +121,7 @@ case "help", "--help", "-h":
       notchlog export [h]  write a report for the last h hours (default 24)
       notchlog sample [n]  print n live samples to the terminal
       notchlog retention   force a rollup and purge now
-      notchlog preview <f> render the panel to a PNG (add --light for light mode)
+      notchlog preview <f> render the panel to a PNG (--light, --calendar)
       notchlog version
     """)
 case nil, "run":
