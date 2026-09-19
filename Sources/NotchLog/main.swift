@@ -90,6 +90,25 @@ case "retention":
     print("rolled up \(r.rolledUp), purged \(r.purgedFine) fine + \(r.purgedMinute) minute rows")
     print("size \(Format.bytes(UInt64(max(0, r.bytesBefore)))) -> \(Format.bytes(UInt64(max(0, r.bytesAfter))))")
 
+case "preview":
+    // Development aid: render the panel to a PNG so the layout can be reviewed
+    // without putting anything on screen.
+    let out = args.dropFirst().first ?? "panel.png"
+    let dark = !args.contains("--light")
+    MainActor.assumeIsolated {
+        _ = NSApplication.shared          // SwiftUI rendering needs an app instance
+        NSApp.setActivationPolicy(.prohibited)
+        if !dark { NSApp.appearance = NSAppearance(named: .aqua) }
+        else { NSApp.appearance = NSAppearance(named: .darkAqua) }
+        do {
+            try PanelPreview.render(to: URL(fileURLWithPath: out), dark: dark)
+            print(out)
+        } catch {
+            FileHandle.standardError.write(Data("preview failed: \(error)\n".utf8))
+            exit(1)
+        }
+    }
+
 case "version", "--version", "-v":
     print(NotchLog.version)
 case "help", "--help", "-h":
@@ -98,6 +117,10 @@ case "help", "--help", "-h":
 
       notchlog             run the monitor (normally started by launchd)
       notchlog selftest    verify the parsers against your own system
+      notchlog export [h]  write a report for the last h hours (default 24)
+      notchlog sample [n]  print n live samples to the terminal
+      notchlog retention   force a rollup and purge now
+      notchlog preview <f> render the panel to a PNG (add --light for light mode)
       notchlog version
     """)
 case nil, "run":

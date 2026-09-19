@@ -40,7 +40,7 @@ public final class NotchController {
         let model = self.model
         self.host = NSHostingView(rootView: ExpandedView(
             model: model, topInset: geometry.contentTopInset,
-            onExport: {}, onQuit: {}))
+            onExport: {}, onRevealData: {}, onQuit: {}))
         self.container = HoverHostView(frame: NSRect(origin: .zero, size: geometry.collapsed.size))
         self.panel = NSPanel(contentRect: geometry.collapsed,
                              styleMask: [.borderless, .nonactivatingPanel],
@@ -73,10 +73,7 @@ public final class NotchController {
     }
 
     private func wire() {
-        host.rootView = ExpandedView(
-            model: model, topInset: geometry.contentTopInset,
-            onExport: { [weak self] in self?.export() },
-            onQuit: { NSApp.terminate(nil) })
+        host.rootView = makeRootView()
 
         container.onEnter = { [weak self] in self?.hover.cursorEnteredCollapsedArea() }
         container.onExit = { [weak self] in self?.hover.cursorLeftCollapsedArea() }
@@ -99,6 +96,16 @@ public final class NotchController {
             object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor in self?.screenParametersChanged() }
             }
+    }
+
+    private func makeRootView() -> ExpandedView {
+        ExpandedView(
+            model: model, topInset: geometry.contentTopInset,
+            onExport: { [weak self] in self?.export() },
+            onRevealData: {
+                NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Paths.root.path)
+            },
+            onQuit: { NSApp.terminate(nil) })
     }
 
     public func show() {
@@ -144,10 +151,7 @@ public final class NotchController {
     private func screenParametersChanged() {
         let screen = NSScreen.main ?? NSScreen.screens[0]
         geometry = NotchGeometry.current(for: screen)
-        host.rootView = ExpandedView(
-            model: model, topInset: geometry.contentTopInset,
-            onExport: { [weak self] in self?.export() },
-            onQuit: { NSApp.terminate(nil) })
+        host.rootView = makeRootView()
         let frame = hover.isOpen ? geometry.expanded : geometry.collapsed
         hover.activeFrame = frame
         panel.setFrame(frame, display: true)

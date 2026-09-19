@@ -5,17 +5,25 @@ import SwiftUI
 ///
 /// The top `topInset` points sit behind the camera housing on a notched Mac, where there
 /// are no pixels, so nothing readable is ever placed there.
+///
+/// Each column ranks apps on one metric and draws a bar relative to the busiest app in
+/// **that** column. Bars are never compared across columns: percent, bytes and bytes per
+/// interval share no scale, and a bar that spanned two of them would be meaningless.
 public struct ExpandedView: View {
     @ObservedObject var model: LiveModel
     let topInset: CGFloat
     let onExport: () -> Void
+    let onRevealData: () -> Void
     let onQuit: () -> Void
 
     public init(model: LiveModel, topInset: CGFloat,
-                onExport: @escaping () -> Void, onQuit: @escaping () -> Void) {
+                onExport: @escaping () -> Void,
+                onRevealData: @escaping () -> Void = {},
+                onQuit: @escaping () -> Void) {
         self.model = model
         self.topInset = topInset
         self.onExport = onExport
+        self.onRevealData = onRevealData
         self.onQuit = onQuit
     }
 
@@ -25,116 +33,232 @@ public struct ExpandedView: View {
             content
         }
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(.regularMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5))
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.10), lineWidth: 0.5))
         )
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private var content: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             header
-            HStack(alignment: .top, spacing: 14) {
-                Column(title: "CPU", systemImage: "cpu", rows: model.topCPU, model: model) {
-                    Format.percent($0.cpuPercent(interval: model.interval))
-                }
-                Column(title: "MEMORY", systemImage: "memorychip", rows: model.topRAM, model: model) {
-                    Format.kilobytes($0.rssKB)
-                }
-                Column(title: "NETWORK", systemImage: "arrow.up.arrow.down", rows: model.topNet, model: model) {
-                    Format.bytes($0.netTotal)
-                }
+            HStack(alignment: .top, spacing: 18) {
+                MetricColumn(title: "CPU", accent: Palette.cpu, rows: model.topCPU, model: model,
+                             value: { Format.percent($0.cpuPercent(interval: model.interval)) },
+                             fraction: { row in
+                                 guard model.cpuMax > 0 else { return 0 }
+                                 return row.cpuPercent(interval: model.interval) / model.cpuMax
+                             })
+                MetricColumn(title: "MEMORY", accent: Palette.memory, rows: model.topRAM, model: model,
+                             value: { Format.kilobytes($0.rssKB) },
+                             fraction: { row in
+                                 guard model.ramMax > 0 else { return 0 }
+                                 return Double(row.rssKB) / Double(model.ramMax)
+                             })
+                MetricColumn(title: "NETWORK", accent: Palette.network, rows: model.topNet, model: model,
+                             value: { Format.bytes($0.netTotal) },
+                             fraction: { row in
+                                 guard model.netMax > 0 else { return 0 }
+                                 return Double(row.netTotal) / Double(model.netMax)
+                             })
             }
-            Spacer(minLength: 0)
+            diskLine
+            Divider().opacity(0.4)
             footer
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 18)
         .padding(.bottom, 12)
-        .padding(.top, 8)
+        .padding(.top, 10)
     }
 
+    // MARK: - header
+
     private var header: some View {
-        HStack(spacing: 8) {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text("NotchLog").font(.system(size: 13, weight: .semibold))
-            Text("live · last \(Int(model.interval))s")
-                .font(.system(size: 10)).foregroundStyle(.secondary)
-            Spacer()
+            Text("live · \(Int(model.interval))s")
+                .font(.system(size: 9, weight: .medium))
+                .foregroundStyle(.tertiary)
+            Spacer(minLength: 12)
             if let warning = model.warning {
                 Label(warning, systemImage: "exclamationmark.triangle.fill")
                     .font(.system(size: 10)).foregroundStyle(.orange).lineLimit(1)
-            } else if !model.topDisk.isEmpty {
-                // Disk is shown as a single line rather than a column: it covers only
-                // the user's own processes, so it is not comparable with the others.
-                Text("disk · " + model.topDisk.prefix(2).map {
-                    "\($0.name) \(Format.bytes($0.diskTotal))"
-                }.joined(separator: ", "))
-                .font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+            } else {
+                Stat(label: "CPU", value: Format.percent(model.systemCPUPercent),
+                     help: "Share of all \(ProcessInfo.processInfo.activeProcessorCount) cores. "
+                         + "Per-app figures below are a share of one core, so they can exceed 100%.")
+                Stat(label: "RAM", value: Format.kilobytes(model.totalRSSKB),
+                     help: "Sum of resident memory. Helper processes are counted under their "
+                         + "parent app, which double-counts shared framework pages.")
+                Stat(label: "NET",
+                     value: "↓\(Format.bytes(model.netInRate))/s  ↑\(Format.bytes(model.netOutRate))/s",
+                     help: "Measured per open socket, so totals are a lower bound.")
             }
         }
     }
+
+    // MARK: - disk
+
+    private var diskLine: some View {
+        HStack(spacing: 6) {
+            Text("DISK")
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(.tertiary)
+            // Disk is a single line rather than a fourth column because it covers only
+            // the user's own processes — it is not comparable with the other three.
+            Text("your processes only")
+                .font(.system(size: 9))
+                .foregroundStyle(.tertiary)
+            if model.topDisk.isEmpty {
+                Text("idle").font(.system(size: 10)).foregroundStyle(.tertiary)
+            } else {
+                Text(model.topDisk.map { "\($0.name) \(Format.bytes($0.diskTotal))" }
+                        .joined(separator: "   ·   "))
+                    .font(.system(size: 10).monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    // MARK: - footer
 
     private var footer: some View {
         HStack(spacing: 10) {
             Button(action: onExport) {
-                Label(model.isExporting ? "Exporting…" : "Export last 24 hours (.txt)",
-                      systemImage: "square.and.arrow.down")
-                    .font(.system(size: 11))
+                Label(model.isExporting ? "Exporting…" : "Export last 24 hours",
+                      systemImage: "arrow.down.document")
+                    .font(.system(size: 11, weight: .medium))
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.small)
             .disabled(model.isExporting)
 
             if let status = model.exportStatus {
-                Text(status).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+                Text(status)
+                    .font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
             }
-            Spacer()
-            Text(Format.bytes(UInt64(max(0, model.databaseBytes))))
-                .font(.system(size: 10)).foregroundStyle(.tertiary)
-            Button(action: onQuit) {
-                Image(systemName: "power").font(.system(size: 10))
+            Spacer(minLength: 8)
+            Label(Format.bytes(UInt64(max(0, model.databaseBytes))), systemImage: "internaldrive")
+                .font(.system(size: 9)).foregroundStyle(.tertiary)
+                .help("Database size — capped at 7 days")
+
+            // A menu rather than a bare quit button: revealing the data folder is the
+            // other thing anyone actually wants from here, and it makes the "where does
+            // my data live" question answerable without reading the README.
+            Menu {
+                Button("Reveal Data Folder in Finder", action: onRevealData)
+                Divider()
+                Button("Quit NotchLog", action: onQuit)
+            } label: {
+                Image(systemName: "ellipsis.circle").font(.system(size: 12))
             }
-            .buttonStyle(.borderless)
-            .help("Quit NotchLog")
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help("More options")
         }
     }
 }
 
-private struct Column: View {
+/// A headline number in the header strip.
+private struct Stat: View {
+    let label: String
+    let value: String
+    var help: String = ""
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(label)
+                .font(.system(size: 8, weight: .semibold))
+                .foregroundStyle(.tertiary)
+            Text(value)
+                .font(.system(size: 10, weight: .medium).monospacedDigit())
+                .foregroundStyle(.secondary)
+        }
+        .help(help)
+    }
+}
+
+private struct MetricColumn: View {
     let title: String
-    let systemImage: String
+    let accent: Color
     let rows: [AppUsage]
     @ObservedObject var model: LiveModel
     let value: (AppUsage) -> String
+    let fraction: (AppUsage) -> Double
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Label(title, systemImage: systemImage)
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 5) {
+                // The swatch carries identity; the label carries it in text too, so the
+                // column is still legible without colour vision.
+                RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                    .fill(accent)
+                    .frame(width: 3, height: 9)
+                Text(title)
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .tracking(0.4)
+            }
             if rows.isEmpty {
                 Text("idle").font(.system(size: 10)).foregroundStyle(.tertiary)
             }
             ForEach(rows, id: \.name) { row in
-                HStack(spacing: 5) {
-                    if let icon = model.icon(for: row) {
-                        Image(nsImage: icon).resizable().frame(width: 13, height: 13)
-                    } else {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 9)).foregroundStyle(.tertiary)
-                            .frame(width: 13)
-                    }
-                    Text(row.name).font(.system(size: 11)).lineLimit(1).truncationMode(.tail)
-                    Spacer(minLength: 4)
-                    Text(value(row))
-                        .font(.system(size: 10, weight: .medium).monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
+                MetricRow(row: row, accent: accent, model: model,
+                          value: value(row), fraction: fraction(row))
             }
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct MetricRow: View {
+    let row: AppUsage
+    let accent: Color
+    @ObservedObject var model: LiveModel
+    let value: String
+    let fraction: Double
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 5) {
+                if let icon = model.icon(for: row) {
+                    Image(nsImage: icon).resizable().frame(width: 13, height: 13)
+                } else {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 8))
+                        .foregroundStyle(.quaternary)
+                        .frame(width: 13)
+                }
+                Text(row.name)
+                    .font(.system(size: 11))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Spacer(minLength: 4)
+                // Values wear text tokens, never the series colour — the swatch and the
+                // bar carry identity, the number stays legible ink.
+                Text(value)
+                    .font(.system(size: 10, weight: .medium).monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(accent.opacity(0.16))
+                    Capsule()
+                        .fill(accent)
+                        // Keep a sliver visible for tiny values so a row never reads as
+                        // zero when it is merely small.
+                        .frame(width: max(2, geo.size.width * min(max(fraction, 0), 1)))
+                }
+            }
+            .frame(height: 3)
+        }
+        .padding(.leading, 0)
     }
 }

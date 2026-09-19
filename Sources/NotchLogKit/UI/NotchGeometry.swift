@@ -40,7 +40,7 @@ public struct NotchGeometry: Sendable {
     /// Sized to fit the content exactly. The layout is a fixed five rows per column,
     /// so a taller panel just puts a void between the columns and the footer.
     /// Height = notch band (45) + header + 5 rows + footer + padding.
-    public static let expandedSize = NSSize(width: 640, height: 232)
+    public static let expandedSize = NSSize(width: 660, height: 312)
 
     /// Expanded panel, centred on the notch and clamped to stay on screen.
     public var expanded: NSRect {

@@ -118,10 +118,11 @@ lists for CPU, memory and network, a disk summary, and an export button. Move aw
 collapses. There is nothing to click to open it and nothing to dismiss.
 
 ```bash
-notchlog selftest     # verify the parsers against your own system
-notchlog export 24    # write a report without using the UI
-notchlog sample 3     # print three live samples to the terminal
-notchlog retention    # force a rollup + purge now
+notchlog selftest         # verify the parsers against your own system
+notchlog export 24        # write a report without using the UI
+notchlog sample 3         # print three live samples to the terminal
+notchlog retention        # force a rollup + purge now
+notchlog preview out.png  # render the panel to a PNG (--light for light mode)
 ```
 
 Exports land in `~/Library/Application Support/NotchLog/exports/` and are revealed in
@@ -210,6 +211,13 @@ The panel is an `NSPanel` at `NSWindow.Level.statusBar` (25), one above the menu
 with `.canJoinAllSpaces` and `.fullScreenAuxiliary` so it persists across Spaces and over
 full-screen apps. When collapsed it sits exactly behind the camera housing, where there are
 no pixels — so the resting state is genuinely invisible rather than merely small.
+
+Each column ranks apps on one metric and draws a bar relative to the busiest app in
+**that** column — bars are never compared across columns, because percent, bytes and
+bytes-per-interval share no common scale. The three hues are slots 1–3 of a validated
+categorical palette with separate steps for light and dark, checked against colour-vision
+deficiency simulation rather than chosen by eye; every column and row also carries a text
+label, so identity never depends on colour alone.
 
 Hover uses an `NSTrackingArea` with `.activeAlways`, which fires while other apps are
 frontmost and needs no permission. Closing does **not** use the tracking area: once the
