@@ -110,6 +110,34 @@ case "preview":
         }
     }
 
+case "calendar-test":
+    // Diagnostic: reports how macOS sees this process for TCC purposes, then asks for
+    // Calendar access and reports what actually happened.
+    MainActor.assumeIsolated {
+        _ = NSApplication.shared
+        NSApp.setActivationPolicy(.accessory)
+        let log = CalendarDiagnostics.log
+        log("bundle path        : \(Bundle.main.bundlePath)")
+        log("bundle identifier  : \(Bundle.main.bundleIdentifier ?? "nil  <-- TCC cannot identify this process")")
+        log("usage description  : \(Bundle.main.object(forInfoDictionaryKey: "NSCalendarsFullAccessUsageDescription") != nil ? "present" : "MISSING")")
+        log("responsible parent : \(ProcessInfo.processInfo.environment["__CFBundleIdentifier"] ?? "-")")
+        log("status before      : \(CalendarDiagnostics.statusDescription())")
+        log("")
+        log("requesting access — a macOS dialog should appear now...")
+        CalendarDiagnostics.request { granted, error in
+            CalendarDiagnostics.log("callback granted   : \(granted)")
+            CalendarDiagnostics.log("callback error     : \(error.map { String(describing: $0) } ?? "none")")
+            CalendarDiagnostics.log("status after       : \(CalendarDiagnostics.statusDescription())")
+            CalendarDiagnostics.log("events today       : \(CalendarDiagnostics.eventCountToday())")
+            exit(0)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 40) {
+            CalendarDiagnostics.log("timed out after 40s with no callback")
+            exit(1)
+        }
+    }
+    NSApplication.shared.run()
+
 case "version", "--version", "-v":
     print(NotchLog.version)
 case "help", "--help", "-h":

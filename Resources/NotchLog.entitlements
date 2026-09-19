@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Required by the Hardened Runtime to reach Calendar at all. Without it macOS
+         refuses the request before TCC ever shows a dialog: the request returns
+         granted=false with no error and the status stays "notDetermined" forever.
+         Enabling the hardened runtime without this is what broke the calendar page. -->
+    <key>com.apple.security.personal-information.calendars</key>
+    <true/>
+
+    <!-- Everything below is deliberately ABSENT, and the omissions are the point:
+           com.apple.security.network.client / .server   — NotchLog makes no connections
+           com.apple.security.personal-information.*      — contacts, photos, location
+           com.apple.security.device.camera / .audio-input
+           com.apple.security.automation.apple-events     — no scripting other apps
+           com.apple.security.cs.allow-dyld-environment-variables
+           com.apple.security.cs.disable-library-validation
+         The last two matter: leaving them out is what keeps the hardened runtime's
+         code-injection protections switched on. -->
+</dict>
+</plist>

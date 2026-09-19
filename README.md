@@ -95,6 +95,28 @@ kept at `0600`. Delete it any time:
 rm -rf ~/Library/Application\ Support/NotchLog
 ```
 
+### Hardened runtime and the one entitlement
+
+The app is signed with the **hardened runtime**, which blocks `DYLD_INSERT_LIBRARIES` and
+unsigned code injection. It carries exactly one entitlement:
+
+```
+com.apple.security.personal-information.calendars
+```
+
+The hardened runtime gates protected resources behind entitlements, so without this one
+macOS refuses Calendar access *before TCC ever shows a dialog* — the request returns
+`false` with **no error** and the status stays `notDetermined` forever, which looks
+exactly like a bug in the app. `Scripts/bundle.sh` asserts the entitlement survived
+signing, because losing it fails silently at runtime.
+
+Everything else is deliberately absent, and the omissions are the security story:
+no `network.client` or `network.server`, no contacts, photos, location, camera or
+microphone, no Apple Events, and crucially no
+`cs.allow-dyld-environment-variables` or `cs.disable-library-validation` — leaving those
+out is what keeps the code-injection protections switched on. The full list is in
+[`Resources/NotchLog.entitlements`](Resources/NotchLog.entitlements).
+
 ### Why it is not sandboxed
 
 App Sandbox would be the obvious hardening, and it is deliberately not used: a sandboxed
@@ -160,7 +182,8 @@ notchlog selftest         # verify the parsers against your own system
 notchlog export 24        # write a report without using the UI
 notchlog sample 3         # print three live samples to the terminal
 notchlog retention        # force a rollup + purge now
-notchlog preview out.png  # render the panel to a PNG (--light for light mode)
+notchlog preview out.png  # render the panel to a PNG (--light, --calendar)
+notchlog calendar-test    # diagnose Calendar permission end to end
 ```
 
 Exports land in `~/Library/Application Support/NotchLog/exports/` and are revealed in
@@ -304,6 +327,24 @@ Coverage is stated in the report header.
 **The calendar heat map is mostly blank.** Daily summaries are written by the retention
 pass, which first runs on data older than 24 hours — so a fresh install shows today only,
 and fills in from there. `notchlog retention` forces a pass immediately.
+
+**The calendar page never asks for permission and shows no events.** Check that the
+entitlement is in the signed bundle:
+
+```bash
+codesign -d --entitlements - ~/Library/Application\ Support/NotchLog/NotchLog.app | grep calendars
+```
+
+If it is missing, the hardened runtime is refusing access silently. Rebuild with
+`./Scripts/install.sh`. To see exactly what macOS reports, run the diagnostic:
+
+```bash
+~/Library/Application\ Support/NotchLog/NotchLog.app/Contents/MacOS/notchlog calendar-test
+```
+
+**The events list is empty but access is granted.** There may simply be no events on the
+selected day — the page distinguishes the two cases, showing "No events" when it has
+access and an explanation when it does not.
 
 **macOS asks for Calendar access again after I reinstall.** Expected. The app is ad-hoc
 signed — there is no Developer ID to anchor the grant to — so macOS identifies it by the

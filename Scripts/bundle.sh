@@ -29,7 +29,20 @@ sed "s/__VERSION__/$VERSION/g" "$ROOT/Resources/Info.plist.template" > "$OUT/Con
 # App Sandbox is deliberately NOT used: a sandboxed process cannot exec /usr/bin/nettop
 # (which needs the network-statistics kernel control socket) and no public entitlement
 # grants it, so sandboxing would break the core function outright.
-codesign --force --options runtime --sign - "$OUT" >/dev/null 2>&1 \
-    || codesign --force --sign - "$OUT" >/dev/null
+# The entitlements file is required, not optional: under the hardened runtime macOS
+# refuses Calendar access outright without com.apple.security.personal-information.calendars
+# — the request returns false with no error and TCC never shows a dialog.
+codesign --force --options runtime \
+    --entitlements "$ROOT/Resources/NotchLog.entitlements" \
+    --sign - "$OUT" >/dev/null
+
+# Verify the entitlement survived signing. Losing it fails silently at runtime — the
+# calendar simply never gets permission — so it is worth asserting here rather than
+# discovering it as a bug report.
+if ! codesign -d --entitlements - "$OUT" 2>/dev/null \
+     | tr -d '\0' | grep -q "com.apple.security.personal-information.calendars"; then
+    echo "error: calendar entitlement missing from the signed bundle" >&2
+    exit 1
+fi
 
 echo "$OUT"
