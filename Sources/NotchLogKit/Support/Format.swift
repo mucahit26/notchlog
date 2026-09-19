@@ -18,6 +18,9 @@ public enum Format {
     }
 
     public static func duration(_ seconds: Double) -> String {
+        // Below ten seconds, whole-second rounding turns every light process into "0s",
+        // which makes a CPU leaderboard useless at the bottom.
+        if seconds < 10 { return String(format: "%.1fs", seconds) }
         let s = Int(seconds.rounded())
         let (h, m, sec) = (s / 3600, (s % 3600) / 60, s % 60)
         if h > 0 { return String(format: "%dh %02dm %02ds", h, m, sec) }
