@@ -305,6 +305,12 @@ Coverage is stated in the report header.
 pass, which first runs on data older than 24 hours — so a fresh install shows today only,
 and fills in from there. `notchlog retention` forces a pass immediately.
 
+**macOS asks for Calendar access again after I reinstall.** Expected. The app is ad-hoc
+signed — there is no Developer ID to anchor the grant to — so macOS identifies it by the
+hash of the binary, and rebuilding produces a different hash. Reinstalling after a code
+change can therefore look like a new app and ask once more. This is a consequence of
+shipping as source rather than as a notarized download; see *Install*.
+
 **Two-finger swipe does nothing.** It requires a trackpad or a Magic Mouse; a classic
 wheel mouse can scroll horizontally if it has a tilt wheel, and the page dots are always
 clickable. The gesture is ignored unless it is clearly more horizontal than vertical, so
