@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import SwiftUI
 
@@ -10,6 +11,12 @@ public final class CalendarModel: ObservableObject {
     @Published public private(set) var heat: [Int: DayActivity] = [:]
     @Published public private(set) var dayApps: [DayApp] = []
     @Published public private(set) var eventDays: Set<Int> = []
+    /// Events for the selected day, published rather than fetched from the view body.
+    /// Fetching during a body evaluation both mutated the service's cache mid-update and
+    /// meant a newly granted permission never reached the screen until the page was
+    /// reopened.
+    @Published public private(set) var selectedEvents: [CalendarEvent] = []
+    @Published public private(set) var access: CalendarService.Access = .notDetermined
     @Published public private(set) var loadError: String?
 
     /// Busiest day in the displayed month, used to normalise the heat scale. The scale
@@ -18,10 +25,28 @@ public final class CalendarModel: ObservableObject {
     public private(set) var heatMax: Int64 = 0
 
     private let db: Database
+    private let service: CalendarService
     private let calendar = Calendar.current
+    private var cancellables: Set<AnyCancellable> = []
 
-    public init(database: Database) {
+    public init(database: Database, service: CalendarService) {
         self.db = database
+        self.service = service
+        self.access = service.access
+        // Permission arrives asynchronously, long after the page is drawn. Without this
+        // the calendar stays empty until you swipe away and back.
+        service.$access
+            .removeDuplicates()
+            .sink { [weak self] newAccess in
+                guard let self else { return }
+                self.access = newAccess
+                self.reloadEvents()
+            }
+            .store(in: &cancellables)
+
+        service.onExternalChange = { [weak self] in
+            Task { @MainActor in self?.reloadEvents() }
+        }
     }
 
     public var monthTitle: String {
@@ -93,27 +118,48 @@ public final class CalendarModel: ObservableObject {
         guard let next = calendar.date(byAdding: .month, value: months, to: month) else { return }
         month = next
         reloadMonth()
+        // Event dots belong to the month on screen, so they must follow it.
+        reloadEvents()
     }
 
     public func goToToday() {
         month = Date()
         selected = Date()
-        reloadMonth()
-        reloadSelectedDay()
+        reloadAll()
     }
 
+    /// Selecting any day — including one in the future — reloads that day's events.
     public func select(_ date: Date) {
         selected = date
+        // Selecting a day outside the shown month (a leading/trailing cell) moves the
+        // month with it, otherwise the selection would be invisible.
+        if !calendar.isDate(date, equalTo: month, toGranularity: .month) {
+            month = date
+            reloadMonth()
+        }
         reloadSelectedDay()
+        selectedEvents = service.events(on: date)
+    }
+
+    public func reloadAll() {
+        reloadMonth()
+        reloadSelectedDay()
+        reloadEvents()
+    }
+
+    /// Refreshes everything that comes from the Calendar rather than from our database.
+    public func reloadEvents() {
+        service.refresh()
+        eventDays = service.daysWithEvents(in: month)
+        selectedEvents = service.events(on: selected)
     }
 
     // MARK: - loading
 
-    public func reloadMonth(eventDays: Set<Int> = []) {
+    public func reloadMonth() {
         guard let interval = calendar.dateInterval(of: .month, for: month) else { return }
         let from = Retention.dayKey(for: interval.start)
         let to = Retention.dayKey(for: interval.end.addingTimeInterval(-1))
-        self.eventDays = eventDays
         let db = self.db
         Task.detached(priority: .userInitiated) {
             let result = Result { try db.dailyActivity(from: from, to: to) }

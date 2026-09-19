@@ -342,6 +342,13 @@ If it is missing, the hardened runtime is refusing access silently. Rebuild with
 ~/Library/Application\ Support/NotchLog/NotchLog.app/Contents/MacOS/notchlog calendar-test
 ```
 
+Read its `responsible parent` line first. TCC attributes a request to the process that
+*launched* the app, so running this from a terminal makes your terminal responsible and
+the request is refused against the terminal's own (absent) Calendar permission — the
+result looks identical to a broken app. It should read `com.mucahit26.notchlog`; if it
+names your terminal, that run proves nothing. The installed agent is started by launchd
+and is its own responsible process, which is the case that matters.
+
 **The events list is empty but access is granted.** There may simply be no events on the
 selected day — the page distinguishes the two cases, showing "No events" when it has
 access and an explanation when it does not.

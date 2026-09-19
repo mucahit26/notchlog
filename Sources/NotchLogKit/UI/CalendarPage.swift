@@ -92,9 +92,9 @@ public struct CalendarPage: View {
 
     @ViewBuilder
     private var eventsSection: some View {
-        switch calendarService.access {
+        switch model.access {
         case .granted:
-            let events = calendarService.events(on: model.selected)
+            let events = model.selectedEvents
             if events.isEmpty {
                 Text("No events").font(.system(size: 10)).foregroundStyle(.tertiary)
             } else {

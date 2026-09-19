@@ -19,8 +19,8 @@ public enum PanelPreview {
         let panelState = PanelState()
         panelState.page = page
         let db = try database ?? seededDatabase()
-        let calendarModel = CalendarModel(database: db)
         let calendarService = CalendarService()
+        let calendarModel = CalendarModel(database: db, service: calendarService)
         if page == 1 {
             calendarModel.reloadMonth()
             calendarModel.reloadSelectedDay()

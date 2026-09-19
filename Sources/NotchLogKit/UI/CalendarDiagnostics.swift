@@ -49,5 +49,46 @@ public enum CalendarDiagnostics {
                                                                end: end, calendars: nil)).count
     }
 
+    /// Dumps the next `days` days so it is obvious whether future days resolve —
+    /// clicking ahead to Monday is the whole point of the page.
+    public static func upcoming(days: Int = 8) -> [String] {
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else {
+            return ["(no access)"]
+        }
+        let store = EKEventStore()
+        let cal = Calendar.current
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.dateFormat = "EEE d MMM"
+        let tf = DateFormatter()
+        tf.locale = Locale(identifier: "en_US_POSIX")
+        tf.dateFormat = "HH:mm"
+
+        var out: [String] = []
+        for offset in 0..<days {
+            guard let day = cal.date(byAdding: .day, value: offset,
+                                     to: cal.startOfDay(for: Date())),
+                  let end = cal.date(byAdding: .day, value: 1, to: day) else { continue }
+            let events = store.events(matching: store.predicateForEvents(
+                withStart: day, end: end, calendars: nil))
+                .sorted { ($0.startDate ?? day) < ($1.startDate ?? day) }
+            let summary = events.isEmpty
+                ? "—"
+                : events.map { ev in
+                    let time = ev.isAllDay ? "all-day" : tf.string(from: ev.startDate ?? day)
+                    return "\(time) \(ev.title ?? "?")"
+                  }.joined(separator: " | ")
+            out.append("  \(df.string(from: day))  \(summary)")
+        }
+        return out
+    }
+
+    /// How many calendars the user actually has, which distinguishes "no events" from
+    /// "no calendars are being read".
+    public static func calendarNames() -> [String] {
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return [] }
+        return EKEventStore().calendars(for: .event).map { "\($0.title) [\($0.type.rawValue)]" }
+    }
+
     nonisolated(unsafe) private static var storeBox: EKEventStore?
 }

@@ -95,7 +95,8 @@ public final class NotchController {
         self.monitor = monitor
         let screen = NSScreen.main ?? NSScreen.screens[0]
         self.geometry = NotchGeometry.current(for: screen)
-        self.calendarModel = CalendarModel(database: monitor.database)
+        self.calendarModel = CalendarModel(database: monitor.database,
+                                           service: calendarService)
 
         let model = self.model
         self.host = NSHostingView(rootView: ExpandedView(
@@ -192,8 +193,7 @@ public final class NotchController {
     private func pageChanged(to page: Int) {
         if page == 1 {
             calendarService.requestAccessIfNeeded()
-            calendarModel.reloadMonth(eventDays: calendarService.daysWithEvents(in: calendarModel.month))
-            calendarModel.reloadSelectedDay()
+            calendarModel.reloadAll()
         }
         guard hover.isOpen else { return }
         let target = geometry.expanded(forPage: page)

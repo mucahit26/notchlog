@@ -129,6 +129,11 @@ case "calendar-test":
             CalendarDiagnostics.log("callback error     : \(error.map { String(describing: $0) } ?? "none")")
             CalendarDiagnostics.log("status after       : \(CalendarDiagnostics.statusDescription())")
             CalendarDiagnostics.log("events today       : \(CalendarDiagnostics.eventCountToday())")
+            let cals = CalendarDiagnostics.calendarNames()
+            CalendarDiagnostics.log("calendars visible  : \(cals.isEmpty ? "NONE" : cals.joined(separator: ", "))")
+            CalendarDiagnostics.log("")
+            CalendarDiagnostics.log("next 8 days:")
+            for line in CalendarDiagnostics.upcoming() { CalendarDiagnostics.log(line) }
             exit(0)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 40) {

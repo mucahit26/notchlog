@@ -36,7 +36,20 @@ public final class CalendarService: ObservableObject {
     private let store = EKEventStore()
     private var cache: [Int: [CalendarEvent]] = [:]
 
-    public init() { access = Self.currentStatus() }
+    /// Fires when the user adds or edits an event in Calendar.app, so the panel does not
+    /// show a stale day.
+    public var onExternalChange: (@Sendable () -> Void)?
+
+    public init() {
+        access = Self.currentStatus()
+        NotificationCenter.default.addObserver(
+            forName: .EKEventStoreChanged, object: store, queue: .main) { [weak self] _ in
+                Task { @MainActor in
+                    self?.cache.removeAll()
+                    self?.onExternalChange?()
+                }
+            }
+    }
 
     private static func currentStatus() -> Access {
         switch EKEventStore.authorizationStatus(for: .event) {
@@ -67,7 +80,11 @@ public final class CalendarService: ObservableObject {
 
     public func refresh() {
         cache.removeAll()
-        access = Self.currentStatus()
+        let current = Self.currentStatus()
+        // Assign only on a real change. `access` is @Published and drives a subscriber
+        // that calls back into refresh(); reassigning unconditionally would rely on
+        // removeDuplicates() further down the chain to break the cycle.
+        if current != access { access = current }
     }
 
     /// Events on one local day. Results are cached per day and cleared when access
