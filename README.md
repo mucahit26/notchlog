@@ -168,8 +168,12 @@ Storage is tiered, because a flat week at 10-second resolution would cost roughl
 - **Days 2 to 7** — rolled down to one row per minute.
 - **Older than 7 days** — deleted.
 
-Rows that are simultaneously idle on every axis are not stored at all. The result holds a
-detailed week in roughly **80–150 MB**.
+Rows that are simultaneously idle on every axis are not stored at all — on a typical
+desktop that takes roughly 400 running applications down to **64 stored rows per sample**.
+
+Measured on a real install: **38 bytes per row**, which works out to about 21 MB for the
+last 24 hours at full resolution plus 12 MB for the six rolled-down days — roughly
+**35 MB** in steady state.
 
 The purge is *rolling* rather than a weekly wipe, so the file stays a steady size instead
 of sawtoothing to a weekly peak. Freed pages are returned to the filesystem with
@@ -178,17 +182,19 @@ database size in temporary space.
 
 ## Cost
 
-Measured on a MacBook Air M3:
+Measured on a MacBook Air M3 (8 cores), running as the installed LaunchAgent:
 
 | | |
 |---|---|
-| CPU, idle | **~0.13% of one core** (≈14 ms per 10-second sample) |
-| Memory | ~59 MB resident |
-| Disk | ~80–150 MB steady state, hard-capped at 7 days |
+| CPU, panel closed | **~0.5% of one core** — ≈50 ms per 10-second sample |
+| CPU, panel open | a few percent, while sampling speeds up to 2 s and SwiftUI redraws |
+| Memory | ~60 MB resident |
+| Disk | **~35 MB** steady state, hard-capped at 7 days |
 
 Sampling is single-shot polling, not a persistent child process. A continuously running
 `nettop` was measured burning **~145% CPU** regardless of its sample interval, while a
-single-shot poll costs 0.01 CPU-seconds.
+single-shot poll costs 0.01 CPU-seconds. The remaining cost is mostly the SQLite write
+and reading per-process disk counters for every PID on the system.
 
 ## How it works
 
