@@ -242,6 +242,17 @@ public final class Database {
     var handle: OpaquePointer? { db }
     func clearAppCache() { appIDCache.removeAll() }
 
+    /// Row count for a table, used by the self-test to verify retention actually
+    /// moved and deleted what it claimed.
+    public func count(_ table: String) throws -> Int {
+        try queue.sync {
+            let stmt = try prepare("SELECT COUNT(*) FROM \(table);")
+            defer { sqlite3_finalize(stmt) }
+            guard sqlite3_step(stmt) == SQLITE_ROW else { return 0 }
+            return Int(sqlite3_column_int64(stmt, 0))
+        }
+    }
+
     public var fileSizeBytes: Int64 {
         var total: Int64 = 0
         for suffix in ["", "-wal", "-shm"] {

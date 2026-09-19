@@ -130,6 +130,69 @@ public enum SelfTest {
                 "(root-owned processes return EPERM; this is expected)")
         }
 
+        checkRetention(&c, log: log)
         return c.report
+    }
+
+    /// Exercises rollup and purge against a throwaway database.
+    ///
+    /// Worth doing on every run: these paths only fire on data older than 24 hours, so
+    /// in normal operation a bug here would stay invisible for a day and then quietly
+    /// destroy or duplicate a week of history.
+    private static func checkRetention(_ c: inout Ctx, log: (String) -> Void) {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("notchlog-selftest-\(UUID().uuidString).sqlite")
+        defer {
+            for suffix in ["", "-wal", "-shm"] {
+                try? FileManager.default.removeItem(atPath: tmp.path + suffix)
+            }
+        }
+
+        do {
+            let db = try Database(url: tmp)
+            let now = Date()
+
+            func snapshot(ageSeconds: Double, cpuMS: Int, netIn: UInt64) -> Snapshot {
+                Snapshot(date: now.addingTimeInterval(-ageSeconds), interval: 10,
+                         apps: [AppUsage(name: "TestApp", bundlePath: nil, cpuMS: cpuMS,
+                                         rssKB: 100_000, netIn: netIn, netOut: 0,
+                                         diskRead: 5, diskWritten: 7, processCount: 1)],
+                         isGap: false)
+            }
+
+            // Six samples inside one minute, 30 hours ago: must collapse to ONE row.
+            for i in 0..<6 {
+                try db.insert(snapshot: snapshot(ageSeconds: 30 * 3600 + Double(i * 10),
+                                                 cpuMS: 100, netIn: 1000))
+            }
+            // Recent sample: must survive at full resolution.
+            try db.insert(snapshot: snapshot(ageSeconds: 60, cpuMS: 500, netIn: 42))
+            // Ancient sample, beyond the retention window: must disappear entirely.
+            try db.insert(snapshot: snapshot(ageSeconds: 9 * 24 * 3600, cpuMS: 900, netIn: 7))
+
+            c.equal("retention: fine rows before", try db.count("sample_fine"), 8)
+
+            let result = try Retention().run(on: db, now: now)
+
+            c.equal("retention: recent row kept at full resolution", try db.count("sample_fine"), 1)
+            c.check("retention: old fine rows removed", result.purgedFine == 7)
+            // Six 10-second samples in the same minute collapse into a single bucket;
+            // the 9-day-old one is purged rather than rolled.
+            c.equal("retention: rolled into one minute bucket", try db.count("sample_minute"), 1)
+
+            let rolled = try db.stats(since: now.addingTimeInterval(-31 * 3600),
+                                      until: now.addingTimeInterval(-29 * 3600))
+            c.equal("retention: rollup preserved total CPU", rolled.rows.first?.cpuMS, 600)
+            c.equal("retention: rollup preserved total bytes", rolled.rows.first?.netIn, 6000)
+
+            // Running twice must not duplicate or lose anything.
+            _ = try Retention().run(on: db, now: now)
+            c.equal("retention: idempotent on minute rows", try db.count("sample_minute"), 1)
+            c.equal("retention: idempotent on fine rows", try db.count("sample_fine"), 1)
+
+            log("  retention: 8 fine rows -> 1 recent + 1 rolled minute bucket, purge verified")
+        } catch {
+            c.report.failures.append("retention check failed: \(error)")
+        }
     }
 }
