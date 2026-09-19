@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import NotchLogKit
 
@@ -99,6 +100,28 @@ case "help", "--help", "-h":
       notchlog selftest    verify the parsers against your own system
       notchlog version
     """)
+case nil, "run":
+    runApp()
+
 default:
-    print("notchlog \(NotchLog.version) — UI not wired up yet")
+    FileHandle.standardError.write(Data("unknown command: \(args[0])\n".utf8))
+    exit(2)
+}
+
+func runApp() {
+    // Top-level code is not main-actor isolated, but everything below runs before the
+    // run loop starts and is on the main thread by construction.
+    MainActor.assumeIsolated { startApp() }
+}
+
+@MainActor
+private func startApp() {
+    let app = NSApplication.shared
+    // .accessory: no Dock icon, no app switcher entry, no menu of its own. This is what
+    // makes it a background resident rather than an app the user launches and switches to.
+    app.setActivationPolicy(.accessory)
+    let delegate = AppDelegate()
+    app.delegate = delegate
+    app.run()
+    _ = delegate
 }

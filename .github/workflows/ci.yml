@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      # GitHub runners ship full Xcode, which would hide a break in the one constraint
+      # this project actually promises: that it builds with the Command Line Tools alone.
+      # Switch to CLT when it is present so CI tests the real claim.
+      - name: Prefer Command Line Tools over Xcode
+        run: |
+          if [ -d /Library/Developer/CommandLineTools ]; then
+            sudo xcode-select -s /Library/Developer/CommandLineTools
+            echo "Using CLT-only toolchain"
+          else
+            echo "::warning::CommandLineTools not present; building with Xcode's toolchain"
+          fi
+          swift --version
+          xcrun --show-sdk-path
+
+      - name: Build
+        run: swift build -c release
+
+      # The test suite is a subcommand, not a test target: neither XCTest nor
+      # swift-testing ships with the Command Line Tools, so `swift test` cannot run
+      # on a machine without Xcode.
+      - name: Self-test
+        run: ./.build/release/notchlog selftest
+
+      - name: Assemble app bundle
+        run: ./Scripts/bundle.sh
+
+  no-network-audit:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Forbid networking symbols in sources
+        run: |
+          PATTERN='URLSession|URLRequest|NSURLConnection|import Network|NWConnection|NWBrowser|NWListener|NWPathMonitor|CFSocket|CFStream|CFHTTP|WKWebView|import WebKit|getaddrinfo|\bsocket[[:space:]]*\(|\bconnect[[:space:]]*\('
+          if grep -rnE "$PATTERN" Sources/ ; then
+            echo "::error::a networking symbol appears in Sources/. NotchLog must have no network code."
+            exit 1
+          fi
+          echo "No networking symbols found."
+
+      - name: Forbid any dependency
+        run: |
+          if grep -nE '\.package\(' Package.swift ; then
+            echo "::error::Package.swift declares a dependency. This package must stay dependency-free."
+            exit 1
+          fi
+          echo "Package.swift declares no dependencies."
+
+      # Without -n, nettop does reverse-DNS on every remote address, which would make
+      # this monitoring tool generate its own outbound DNS traffic.
+      - name: Assert nettop is always invoked with -n
+        run: |
+          if ! grep -q '"-n"' Sources/NotchLogKit/Collect/NettopSource.swift ; then
+            echo "::error::nettop must be invoked with -n to suppress reverse-DNS lookups."
+            exit 1
+          fi
+          echo "nettop -n is present."
+
+      - name: Forbid spawning anything outside the allowlist
+        run: |
+          HITS="$(grep -rn 'executableURL\|launchPath' Sources/ | grep -v 'ProcessRunner.swift' || true)"
+          if [ -n "$HITS" ]; then
+            echo "$HITS"
+            echo "::error::subprocesses may only be launched through ProcessRunner's allowlist."
+            exit 1
+          fi
+          echo "All subprocess launches go through the allowlist."
+
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - run: shellcheck Scripts/*.sh

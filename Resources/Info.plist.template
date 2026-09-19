@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>            <string>com.mucahit26.notchlog</string>
+    <key>CFBundleName</key>                  <string>NotchLog</string>
+    <key>CFBundleDisplayName</key>           <string>NotchLog</string>
+    <key>CFBundleExecutable</key>            <string>notchlog</string>
+    <key>CFBundlePackageType</key>           <string>APPL</string>
+    <key>CFBundleShortVersionString</key>    <string>__VERSION__</string>
+    <key>CFBundleVersion</key>               <string>__VERSION__</string>
+    <key>LSMinimumSystemVersion</key>        <string>14.0</string>
+    <key>NSHighResolutionCapable</key>       <true/>
+    <!-- No Dock icon, no app switcher entry: this is a background resident. -->
+    <key>LSUIElement</key>                   <true/>
+</dict>
+</plist>
