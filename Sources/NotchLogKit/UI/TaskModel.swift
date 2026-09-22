@@ -88,15 +88,22 @@ public final class TaskModel: ObservableObject {
                 self.installed = apps
                 self.isScanning = false
             }
-            // Icons come from LaunchServices and are not cheap. Load them in one pass
-            // after the list is already usable, then publish once.
-            var loaded: [String: NSImage] = [:]
-            for app in apps {
-                if let image = await MainActor.run(body: { InstalledApps.icon(forPath: app.path) }) {
-                    loaded[app.path] = image
+            // Icons come from LaunchServices and are not cheap. They are loaded after
+            // the list is already usable, in small batches on the main actor: NSImage
+            // is not Sendable so it cannot cross an actor boundary, and doing all
+            // ninety in one hop would block the main thread while the panel is open.
+            let batchSize = 12
+            for start in stride(from: 0, to: apps.count, by: batchSize) {
+                let batch = Array(apps[start..<min(start + batchSize, apps.count)])
+                await MainActor.run {
+                    for app in batch {
+                        if let image = InstalledApps.icon(forPath: app.path) {
+                            self.icons[app.path] = image
+                        }
+                    }
                 }
+                await Task.yield()
             }
-            await MainActor.run { self.icons = loaded }
         }
     }
 
