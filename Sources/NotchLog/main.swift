@@ -134,6 +134,7 @@ case "calendar-test":
             CalendarDiagnostics.log("events today       : \(CalendarDiagnostics.eventCountToday())")
             let cals = CalendarDiagnostics.calendarNames()
             CalendarDiagnostics.log("calendars visible  : \(cals.isEmpty ? "NONE" : cals.joined(separator: ", "))")
+            CalendarDiagnostics.log("write target       : \(CalendarDiagnostics.writeTarget())")
             CalendarDiagnostics.log("")
             CalendarDiagnostics.log("next 8 days:")
             for line in CalendarDiagnostics.upcoming() { CalendarDiagnostics.log(line) }

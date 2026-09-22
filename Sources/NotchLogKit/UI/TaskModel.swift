@@ -9,6 +9,9 @@ public final class TaskModel: ObservableObject {
     @Published public var draftTitle = ""
     @Published public var draftNotes = ""
     @Published public var draftApps: Set<String> = []      // keyed by InstalledApp.id (path)
+    @Published public var draftHasDueDate = false
+    @Published public var draftDueDate = Calendar.current.startOfDay(for: Date())
+    @Published public var draftAddToCalendar = false
     @Published public var appSearch = ""
     @Published public var saveMessage: String?
 
@@ -47,13 +50,25 @@ public final class TaskModel: ObservableObject {
     @Published public private(set) var runningBundleIDs: Set<String> = []
 
     private let db: Database
+    private let calendar: CalendarService
     /// Built once after the scan and then only read. Loading icons lazily from the view
     /// body meant mutating this dictionary during a SwiftUI update, on every scroll, for
     /// every row that came into view — which is what made the picker feel sticky.
     @Published private var icons: [String: NSImage] = [:]
 
-    public init(database: Database) {
+    /// Only offerable when a deadline exists — an event needs a day to sit on — and
+    /// when NotchLog actually has calendar access.
+    public var canAddToCalendar: Bool {
+        draftHasDueDate && calendar.access == .granted
+    }
+
+    public var calendarAccessDenied: Bool {
+        draftHasDueDate && calendar.access != .granted && calendar.access != .notDetermined
+    }
+
+    public init(database: Database, calendar: CalendarService) {
         self.db = database
+        self.calendar = calendar
         refreshRunning()
         // The grouping below is only useful if it keeps up with what is open, so it
         // follows the workspace rather than being sampled once when the page appears.
@@ -212,20 +227,39 @@ public final class TaskModel: ObservableObject {
         guard !title.isEmpty else { return }
         let notes = draftNotes.trimmingCharacters(in: .whitespacesAndNewlines)
         let apps = installed.filter { draftApps.contains($0.id) }.map(\.taskApp)
-        let db = self.db
+        let due = draftHasDueDate ? Calendar.current.startOfDay(for: draftDueDate) : nil
 
+        // The event is written first, on the main actor, so its identifier can be stored
+        // with the task. If the calendar refuses, the task is still saved — losing a
+        // typed note because an event could not be created would be the wrong trade.
+        var eventID: String?
+        var calendarNote: String?
+        if let due, draftAddToCalendar, canAddToCalendar {
+            switch calendar.createAllDayEvent(title: title, notes: notes, on: due) {
+            case .success(let id):
+                eventID = id.isEmpty ? nil : id
+                calendarNote = " and added to your calendar"
+            case .failure(let error):
+                calendarNote = " (calendar: \(error.localizedDescription))"
+            }
+        }
+
+        let db = self.db
+        let storedEventID = eventID
+        let note = calendarNote
         Task.detached(priority: .userInitiated) {
-            let result = Result { try db.createTask(title: title, notes: notes, apps: apps) }
+            let result = Result {
+                try db.createTask(title: title, notes: notes, apps: apps,
+                                  dueAt: due, eventID: storedEventID)
+            }
             await MainActor.run {
                 switch result {
                 case .success:
-                    self.draftTitle = ""
-                    self.draftNotes = ""
-                    self.draftApps = []
-                    self.appSearch = ""
-                    self.saveMessage = apps.isEmpty
+                    self.clearDraft()
+                    let reminder = apps.isEmpty
                         ? "Saved"
                         : "Saved — you'll be reminded when \(Self.describe(apps)) opens"
+                    self.saveMessage = reminder + (note ?? "")
                     self.reload()
                 case .failure(let error):
                     self.saveMessage = "Could not save: \(error)"
@@ -255,6 +289,9 @@ public final class TaskModel: ObservableObject {
         draftNotes = ""
         draftApps = []
         appSearch = ""
+        draftHasDueDate = false
+        draftDueDate = Calendar.current.startOfDay(for: Date())
+        draftAddToCalendar = false
         saveMessage = nil
     }
 

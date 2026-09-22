@@ -90,5 +90,18 @@ public enum CalendarDiagnostics {
         return EKEventStore().calendars(for: .event).map { "\($0.title) [\($0.type.rawValue)]" }
     }
 
+    /// Whether an event could be written, without writing one.
+    public static func writeTarget() -> String {
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else {
+            return "no access"
+        }
+        let store = EKEventStore()
+        guard let calendar = store.defaultCalendarForNewEvents else {
+            return "NO default calendar for new events — events cannot be created"
+        }
+        let modifiable = calendar.allowsContentModifications
+        return "\(calendar.title) [\(calendar.source.title)] writable=\(modifiable)"
+    }
+
     nonisolated(unsafe) private static var storeBox: EKEventStore?
 }

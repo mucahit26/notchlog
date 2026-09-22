@@ -152,6 +152,22 @@ public final class Database: @unchecked Sendable {
 
         CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
         """)
+
+        // Added after the task table shipped, so existing databases need them bolted on.
+        try addColumn("due_at", type: "INTEGER", to: "task")
+        try addColumn("event_id", type: "TEXT", to: "task")
+    }
+
+    /// `ALTER TABLE ... ADD COLUMN` fails if the column is already there and SQLite has
+    /// no `IF NOT EXISTS` for it, so the schema is inspected first. This runs on every
+    /// open, against a database that may have been created by any earlier version.
+    private func addColumn(_ name: String, type: String, to table: String) throws {
+        let check = try prepare("PRAGMA table_info(\(table));")
+        defer { sqlite3_finalize(check) }
+        while sqlite3_step(check) == SQLITE_ROW {
+            if String(cString: sqlite3_column_text(check, 1)) == name { return }
+        }
+        try exec("ALTER TABLE \(table) ADD COLUMN \(name) \(type);")
     }
 
     // MARK: - primitives

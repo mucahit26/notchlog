@@ -52,6 +52,7 @@ it does with that.
 | Subprocesses | Exactly two, by absolute path: `/bin/ps` and `/usr/bin/nettop`. |
 | Where data lives | `~/Library/Application Support/NotchLog/`, directory `0700`, database `0600`. |
 | Your notes | Tasks and ideas you type stay in that database. They are never exported, never purged, and there is no network to send them anywhere. |
+| Calendar writes | Only when you tick the box on a task with a deadline, and only an all-day event on that date. Never deletes. |
 
 ### The one permission, and how to avoid it
 
@@ -66,8 +67,15 @@ Page 2 shows events from your Calendar, and that needs macOS Calendar access. It
   to the calendar, you are never asked.
 - **Optional** — deny it and the page still works. The month grid and the activity heat
   map come from NotchLog's own database; only the event list stays empty.
-- **Read-only, and nothing is kept.** Events are read for display and dropped. They are
-  never written to the database, never exported, and there is no network to send them to.
+- **Read-only by default.** Events are read for display and dropped — never written to
+  the database, never exported, and there is no network to send them to.
+- **One write, only when you ask for it.** Ticking *"Also add an all-day event to my
+  calendar"* when saving a task creates exactly one all-day event on the deadline you
+  set, in your default calendar. That is the only thing NotchLog ever writes outside its
+  own database. Leave the box alone and it never touches your calendar.
+- **It does not delete.** Completing or deleting a task leaves the event where it is.
+  Removing entries from someone's calendar without being asked is not a decision this
+  app should make on its own; delete it in Calendar if you want it gone.
 
 If you would rather the capability did not exist at all, delete
 `Sources/NotchLogKit/UI/CalendarService.swift` and the `NSCalendarsFullAccessUsageDescription`
@@ -197,6 +205,12 @@ page dots. Swiping left goes forward, matching Safari's page gesture.
 2. **New task** — write down a task or an idea and pick the applications it belongs to,
    with the ones currently running offered first. The date is recorded automatically.
    `⌘↩` saves.
+
+   Optionally set a **deadline**, and optionally have that deadline added to your
+   calendar as an all-day event. Dated tasks sort to the top of the list, soonest first;
+   overdue ones are marked in red and ones due today in orange. If the calendar refuses
+   for any reason the task is still saved — losing something you typed because an event
+   could not be created would be the wrong trade.
 3. **Live** — what is using CPU, memory and network right now.
 4. **Calendar** — a month grid where each day is tinted by how much CPU your Mac burned
    that day, with the selected day's calendar events and busiest applications beside it.

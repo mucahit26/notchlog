@@ -21,7 +21,7 @@ public enum PanelPreview {
         let db = try database ?? seededDatabase()
         let calendarService = CalendarService()
         let calendarModel = CalendarModel(database: db, service: calendarService)
-        let taskModel = TaskModel(database: db)
+        let taskModel = TaskModel(database: db, calendar: calendarService)
         if page == PanelState.Page.newTask.rawValue || page == PanelState.Page.tasks.rawValue {
             seedTasks(db)
             taskModel.loadInstalledApps()
@@ -29,6 +29,8 @@ public enum PanelPreview {
             if page == PanelState.Page.newTask.rawValue {
                 taskModel.draftTitle = "Ship the notch task pages"
                 taskModel.draftNotes = "Capture form plus a list, with a reminder when the associated app launches."
+                taskModel.draftHasDueDate = true
+                taskModel.draftDueDate = Date().addingTimeInterval(3 * 86_400)
             } else {
                 taskModel.reminderContext = "Google Chrome"
             }
@@ -131,11 +133,14 @@ public enum PanelPreview {
             notes: "Current one buries the install step under three paragraphs of preamble.",
             apps: [TaskApp(name: "Mail", bundleID: "com.apple.mail"),
                    TaskApp(name: "Google Chrome", bundleID: "com.google.Chrome")],
+            dueAt: now.addingTimeInterval(-2 * 86_400),         // overdue
+            eventID: "preview-event",
             now: now.addingTimeInterval(-3 * 3600))
         _ = try? db.createTask(
             title: "Check the Q3 spend figures against the invoices",
             notes: "",
             apps: [TaskApp(name: "Microsoft Excel", bundleID: "com.microsoft.Excel")],
+            dueAt: now,                                          // due today
             now: now.addingTimeInterval(-26 * 3600))
         _ = try? db.createTask(
             title: "Idea: a heat map of when I actually focus, not just when the Mac is busy",

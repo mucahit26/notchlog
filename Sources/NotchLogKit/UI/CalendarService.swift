@@ -128,6 +128,52 @@ public final class CalendarService: ObservableObject {
         return days
     }
 
+    // MARK: - writing
+
+    public enum WriteError: LocalizedError {
+        case noAccess
+        case noCalendar
+        case underlying(String)
+
+        public var errorDescription: String? {
+            switch self {
+            case .noAccess: return "Calendar access is off"
+            case .noCalendar: return "No writable calendar"
+            case .underlying(let message): return message
+            }
+        }
+    }
+
+    /// Creates an all-day event for a task's deadline and returns its identifier.
+    ///
+    /// This is the only place NotchLog writes anything outside its own database, and it
+    /// happens solely because the box was ticked on the capture page. A deadline is a
+    /// day rather than a moment, so the event is all-day; the task's notes carry over so
+    /// the event is useful on its own.
+    public func createAllDayEvent(title: String, notes: String,
+                                  on date: Date) -> Result<String, WriteError> {
+        guard access == .granted else { return .failure(.noAccess) }
+        guard let calendar = store.defaultCalendarForNewEvents,
+              calendar.allowsContentModifications else { return .failure(.noCalendar) }
+
+        let day = Calendar.current.startOfDay(for: date)
+        let event = EKEvent(eventStore: store)
+        event.calendar = calendar
+        event.title = title
+        event.notes = notes.isEmpty ? nil : notes
+        event.isAllDay = true
+        event.startDate = day
+        event.endDate = day
+
+        do {
+            try store.save(event, span: .thisEvent, commit: true)
+            cache.removeAll()
+            return .success(event.eventIdentifier ?? "")
+        } catch {
+            return .failure(.underlying(error.localizedDescription))
+        }
+    }
+
     private static func hex(from color: NSColor) -> Int {
         guard let rgb = color.usingColorSpace(.sRGB) else { return 0x888888 }
         let r = Int((rgb.redComponent * 255).rounded())

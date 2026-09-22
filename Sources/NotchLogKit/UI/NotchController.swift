@@ -111,7 +111,7 @@ public final class NotchController {
         self.geometry = NotchGeometry.current()
         self.calendarModel = CalendarModel(database: monitor.database,
                                            service: calendarService)
-        self.taskModel = TaskModel(database: monitor.database)
+        self.taskModel = TaskModel(database: monitor.database, calendar: calendarService)
 
         let model = self.model
         self.host = NSHostingView(rootView: ExpandedView(

@@ -16,6 +16,11 @@ public enum Palette {
     public static let memory = dynamic(light: 0xEB6834, dark: 0xD95926)   // orange
     public static let network = dynamic(light: 0x1BAF7A, dark: 0x199E70)  // aqua
 
+    /// Reserved for state, never for a series: a missed deadline is a status, and
+    /// reusing one of the three metric hues for it would make the same colour mean two
+    /// different things on the same screen.
+    public static let overdue = dynamic(light: 0xE34948, dark: 0xE66767)  // red
+
     private static func dynamic(light: Int, dark: Int) -> Color {
         Color(nsColor: NSColor(name: nil) { appearance in
             let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua

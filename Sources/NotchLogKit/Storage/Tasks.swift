@@ -16,9 +16,23 @@ public struct TaskItem: Identifiable, Sendable, Equatable {
     public var notes: String
     public var createdAt: Date
     public var completedAt: Date?
+    /// Deadline, if one was given. Date only — a due date is a day, not a moment.
+    public var dueAt: Date?
+    /// Identifier of the calendar event created for this task, when one was asked for.
+    public var eventID: String?
     public var apps: [TaskApp]
 
     public var isOpen: Bool { completedAt == nil }
+
+    public var isOverdue: Bool {
+        guard isOpen, let dueAt else { return false }
+        return Calendar.current.startOfDay(for: dueAt) < Calendar.current.startOfDay(for: Date())
+    }
+
+    public var isDueToday: Bool {
+        guard isOpen, let dueAt else { return false }
+        return Calendar.current.isDateInToday(dueAt)
+    }
 }
 
 public extension Database {
@@ -26,15 +40,28 @@ public extension Database {
 
     @discardableResult
     func createTask(title: String, notes: String, apps: [TaskApp],
+                    dueAt: Date? = nil, eventID: String? = nil,
                     now: Date = Date()) throws -> Int64 {
         try sync {
             try execRaw("BEGIN IMMEDIATE;")
             do {
-                let stmt = try prepareRaw(
-                    "INSERT INTO task(title, notes, created_at) VALUES(?, ?, ?);")
+                let stmt = try prepareRaw("""
+                    INSERT INTO task(title, notes, created_at, due_at, event_id)
+                    VALUES(?, ?, ?, ?, ?);
+                    """)
                 sqlite3_bind_text(stmt, 1, title, -1, SQLITE_TRANSIENT)
                 sqlite3_bind_text(stmt, 2, notes, -1, SQLITE_TRANSIENT)
                 sqlite3_bind_int64(stmt, 3, Int64(now.timeIntervalSince1970.rounded()))
+                if let dueAt {
+                    sqlite3_bind_int64(stmt, 4, Int64(dueAt.timeIntervalSince1970.rounded()))
+                } else {
+                    sqlite3_bind_null(stmt, 4)
+                }
+                if let eventID {
+                    sqlite3_bind_text(stmt, 5, eventID, -1, SQLITE_TRANSIENT)
+                } else {
+                    sqlite3_bind_null(stmt, 5)
+                }
                 guard sqlite3_step(stmt) == SQLITE_DONE else {
                     sqlite3_finalize(stmt)
                     throw DatabaseError.exec(String(cString: sqlite3_errmsg(handle)))
@@ -93,9 +120,12 @@ public extension Database {
 
     /// Open tasks, newest first. `completedTasks` is the archive, most recently
     /// finished first.
+    /// Open tasks. Dated ones come first, soonest deadline at the top, because a
+    /// deadline is the only ordering the user did not choose arbitrarily; undated
+    /// tasks follow, newest first.
     func openTasks(limit: Int = 200) throws -> [TaskItem] {
         try loadTasks(where: "completed_at IS NULL",
-                      order: "created_at DESC", limit: limit)
+                      order: "due_at IS NULL, due_at ASC, created_at DESC", limit: limit)
     }
 
     func completedTasks(limit: Int = 100) throws -> [TaskItem] {
@@ -184,7 +214,7 @@ public extension Database {
     private func loadTasksLocked(where clause: String, order: String,
                                  limit: Int) throws -> [TaskItem] {
         let stmt = try prepareRaw("""
-            SELECT id, title, notes, created_at, completed_at
+            SELECT id, title, notes, created_at, completed_at, due_at, event_id
               FROM task WHERE \(clause) ORDER BY \(order) LIMIT \(limit);
             """)
         defer { sqlite3_finalize(stmt) }
@@ -193,12 +223,18 @@ public extension Database {
         while sqlite3_step(stmt) == SQLITE_ROW {
             let completedRaw = sqlite3_column_type(stmt, 4) == SQLITE_NULL
                 ? nil : sqlite3_column_int64(stmt, 4)
+            let dueRaw = sqlite3_column_type(stmt, 5) == SQLITE_NULL
+                ? nil : sqlite3_column_int64(stmt, 5)
+            let event = sqlite3_column_type(stmt, 6) == SQLITE_NULL
+                ? nil : String(cString: sqlite3_column_text(stmt, 6))
             rows.append(TaskItem(
                 id: sqlite3_column_int64(stmt, 0),
                 title: String(cString: sqlite3_column_text(stmt, 1)),
                 notes: String(cString: sqlite3_column_text(stmt, 2)),
                 createdAt: Date(timeIntervalSince1970: Double(sqlite3_column_int64(stmt, 3))),
                 completedAt: completedRaw.map { Date(timeIntervalSince1970: Double($0)) },
+                dueAt: dueRaw.map { Date(timeIntervalSince1970: Double($0)) },
+                eventID: event,
                 apps: []))
         }
 

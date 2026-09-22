@@ -241,6 +241,9 @@ private struct TaskRow: View {
                     }
 
                     HStack(spacing: 5) {
+                        if let due = task.dueAt {
+                            DueBadge(task: task, due: due)
+                        }
                         Text(Self.stamp(task))
                             .font(.system(size: 9).monospacedDigit())
                             .foregroundStyle(.tertiary)
@@ -287,6 +290,40 @@ private struct TaskRow: View {
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
         .onTapGesture { withAnimation(.easeOut(duration: 0.15)) { expanded.toggle() } }
+    }
+
+    /// Deadline marker. Overdue wears the reserved status colour rather than one of the
+    /// metric hues, so a missed deadline never looks like a category.
+    private struct DueBadge: View {
+        let task: TaskItem
+        let due: Date
+
+        var body: some View {
+            let overdue = task.isOverdue
+            let today = task.isDueToday
+            let tint: Color = overdue ? Palette.overdue : (today ? Palette.memory : .secondary)
+            HStack(spacing: 3) {
+                Image(systemName: task.eventID == nil ? "flag.fill" : "calendar")
+                    .font(.system(size: 7))
+                Text(label)
+                    .font(.system(size: 9, weight: overdue || today ? .semibold : .regular))
+            }
+            .padding(.horizontal, 4)
+            .padding(.vertical, 1)
+            .background(RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(tint.opacity(overdue || today ? 0.18 : 0.08)))
+            .foregroundStyle(tint)
+            .help(task.eventID == nil ? "Deadline" : "Deadline — also in your calendar")
+        }
+
+        private var label: String {
+            if task.isOverdue { return "overdue" }
+            if task.isDueToday { return "due today" }
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.dateFormat = "d MMM"
+            return "due " + formatter.string(from: due)
+        }
     }
 
     /// Created date for open tasks, finished date for archived ones — the date that

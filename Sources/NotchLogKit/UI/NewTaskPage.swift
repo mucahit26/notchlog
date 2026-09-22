@@ -60,6 +60,8 @@ public struct NewTaskPage: View {
             .frame(maxHeight: .infinity)
             .background(field(focused: focus == .notes))
 
+            deadlineRow
+
             HStack(spacing: 8) {
                 Button(action: { model.save(); focus = .title }) {
                     Label("Save task", systemImage: "arrow.down.to.line")
@@ -79,6 +81,43 @@ public struct NewTaskPage: View {
             }
 
             statusLine
+        }
+    }
+
+    /// Deadline and the one thing in this app that writes outside its own database.
+    private var deadlineRow: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 8) {
+                Toggle(isOn: $model.draftHasDueDate) {
+                    Text("Due date").font(.system(size: 11))
+                }
+                .toggleStyle(.checkbox)
+                .controlSize(.small)
+
+                if model.draftHasDueDate {
+                    DatePicker("", selection: $model.draftDueDate,
+                               displayedComponents: .date)
+                        .datePickerStyle(.compact)
+                        .labelsHidden()
+                        .controlSize(.small)
+                }
+                Spacer(minLength: 0)
+            }
+
+            if model.draftHasDueDate {
+                if model.calendarAccessDenied {
+                    Text("Calendar access is off, so the event cannot be created.")
+                        .font(.system(size: 9)).foregroundStyle(.tertiary)
+                } else {
+                    Toggle(isOn: $model.draftAddToCalendar) {
+                        Text("Also add an all-day event to my calendar")
+                            .font(.system(size: 10))
+                    }
+                    .toggleStyle(.checkbox)
+                    .controlSize(.small)
+                    .disabled(!model.canAddToCalendar)
+                }
+            }
         }
     }
 
