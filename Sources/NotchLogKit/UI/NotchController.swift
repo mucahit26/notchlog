@@ -77,16 +77,26 @@ final class HoverHostView: NSView {
     override func mouseExited(with event: NSEvent) { onExit?() }
 }
 
+/// A `.nonactivatingPanel` never becomes key, so a text field inside it receives no
+/// keystrokes. Overriding `canBecomeKey` allows it — at the cost of activating the app,
+/// which is why the controller only makes it key on the page where typing is the point.
+final class KeyPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
+}
+
 @MainActor
 public final class NotchController {
-    private let panel: NSPanel
+    private let panel: KeyPanel
     private let host: NSHostingView<ExpandedView>
     private let container: HoverHostView
     private let model = LiveModel()
     private let panelState = PanelState()
     private let calendarModel: CalendarModel
     private let calendarService = CalendarService()
+    private let taskModel: TaskModel
     private let hover = HoverTracker()
+    private var reminderDismissTimer: Timer?
     private let monitor: Monitor
     private var geometry: NotchGeometry
     private var pageObserver: AnyCancellable?
@@ -97,16 +107,18 @@ public final class NotchController {
         self.geometry = NotchGeometry.current(for: screen)
         self.calendarModel = CalendarModel(database: monitor.database,
                                            service: calendarService)
+        self.taskModel = TaskModel(database: monitor.database)
 
         let model = self.model
         self.host = NSHostingView(rootView: ExpandedView(
             model: model, panel: panelState, calendarModel: calendarModel,
-            calendarService: calendarService, topInset: geometry.contentTopInset,
+            calendarService: calendarService, taskModel: taskModel,
+            topInset: geometry.contentTopInset,
             onExport: {}, onRevealData: {}, onQuit: {}))
         self.container = HoverHostView(frame: NSRect(origin: .zero, size: geometry.collapsed.size))
-        self.panel = NSPanel(contentRect: geometry.collapsed,
-                             styleMask: [.borderless, .nonactivatingPanel],
-                             backing: .buffered, defer: false)
+        self.panel = KeyPanel(contentRect: geometry.collapsed,
+                              styleMask: [.borderless, .nonactivatingPanel],
+                              backing: .buffered, defer: false)
         configurePanel()
         wire()
     }
@@ -161,6 +173,9 @@ public final class NotchController {
         monitor.onError = { [weak self] message in
             Task { @MainActor in self?.model.warning = message }
         }
+        monitor.onAppLaunched = { [weak self] bundleID, name in
+            Task { @MainActor in self?.appLaunched(bundleID: bundleID, name: name) }
+        }
 
         NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
@@ -172,7 +187,8 @@ public final class NotchController {
     private func makeRootView() -> ExpandedView {
         ExpandedView(
             model: model, panel: panelState, calendarModel: calendarModel,
-            calendarService: calendarService, topInset: geometry.contentTopInset,
+            calendarService: calendarService, taskModel: taskModel,
+            topInset: geometry.contentTopInset,
             onExport: { [weak self] in self?.export() },
             onRevealData: {
                 NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: Paths.root.path)
@@ -191,10 +207,18 @@ public final class NotchController {
     /// Resize to the page's own height, and do the calendar's lazy setup the first time
     /// page 2 is shown — which is the only moment NotchLog ever asks macOS for anything.
     private func pageChanged(to page: Int) {
-        if page == 1 {
+        switch panelState.current {
+        case .calendar:
             calendarService.requestAccessIfNeeded()
             calendarModel.reloadAll()
+        case .newTask:
+            taskModel.loadInstalledApps()
+        case .tasks:
+            taskModel.reload()
+        case .live:
+            break
         }
+        updateKeyboardOwnership()
         guard hover.isOpen else { return }
         let target = geometry.expanded(forPage: page)
         hover.activeFrame = target
@@ -202,6 +226,24 @@ public final class NotchController {
             ctx.duration = 0.24
             ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
             panel.animator().setFrame(target, display: true)
+        }
+    }
+
+    /// Typing requires the panel to be key, which activates the whole app and takes
+    /// focus from whatever the user was doing. That is acceptable on the page whose
+    /// purpose is writing, and unacceptable everywhere else — so key status is acquired
+    /// and given back as the page changes. The hover tracker is locked at the same time,
+    /// because a draft must not be destroyed by the pointer drifting off the panel.
+    private func updateKeyboardOwnership() {
+        let wantsKeyboard = hover.isOpen && panelState.current.needsKeyboard
+        hover.setLocked(wantsKeyboard)
+        if wantsKeyboard {
+            NSApp.activate(ignoringOtherApps: true)
+            panel.makeKeyAndOrderFront(nil)
+        } else if panel.isKeyWindow {
+            panel.resignKey()
+            // Hand the foreground back rather than sitting on it as an accessory app.
+            NSApp.hide(nil)
         }
     }
 
@@ -222,7 +264,11 @@ public final class NotchController {
 
     private func collapse() {
         monitor.setFastMode(false)
-        // Always reopen on the live page; the calendar is something you go to.
+        hover.setLocked(false)
+        if panel.isKeyWindow { panel.resignKey(); NSApp.hide(nil) }
+        reminderDismissTimer?.invalidate(); reminderDismissTimer = nil
+        taskModel.reminderContext = nil
+        // Always reopen on the live page; the other pages are somewhere you go.
         panelState.page = 0
         model.exportStatus = nil
         let target = geometry.collapsed
@@ -246,6 +292,75 @@ public final class NotchController {
         let frame = hover.isOpen ? geometry.expanded(forPage: panelState.page) : geometry.collapsed
         hover.activeFrame = frame
         panel.setFrame(frame, display: true)
+    }
+
+    // MARK: - launch reminders
+
+    /// An application the user tied a task to has just started.
+    ///
+    /// The panel opens by itself to show what was waiting, then closes again. It
+    /// deliberately does NOT take key status: the user was in the middle of launching
+    /// something, and stealing the keyboard at that moment would be hostile.
+    private func appLaunched(bundleID: String?, name: String?) {
+        let db = monitor.database
+        Task.detached(priority: .utility) {
+            guard let tasks = try? db.openTasks(forBundleID: bundleID, name: name),
+                  !tasks.isEmpty else { return }
+            // Remind once per app per day, so relaunching all morning is not a nag.
+            let key = bundleID ?? name ?? ""
+            let due = tasks.filter { (try? db.shouldRemind(taskID: $0.id, bundleID: key)) ?? false }
+            guard !due.isEmpty else { return }
+
+            // Mark as reminded only if it was actually shown. Marking first meant that
+            // a launch arriving while the panel was already open consumed the reminder
+            // without displaying it, and the task then stayed silent for the rest of
+            // the day.
+            let shown = await MainActor.run { self.presentReminder(appName: name ?? key) }
+            guard shown else { return }
+            for task in due { try? db.markReminded(taskID: task.id, bundleID: key) }
+        }
+    }
+
+    /// Returns whether the reminder was actually put on screen.
+    @discardableResult
+    private func presentReminder(appName: String) -> Bool {
+        // Never interrupt someone already using the panel.
+        guard !hover.isOpen else { return false }
+        taskModel.reminderContext = appName
+        taskModel.reload()
+        panelState.page = PanelState.Page.tasks.rawValue
+
+        let target = geometry.expanded(forPage: panelState.page)
+        hover.activeFrame = target
+        host.isHidden = false
+        panel.orderFrontRegardless()          // visible, but not key: no focus stolen
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.28
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            panel.animator().setFrame(target, display: true)
+        }
+
+        reminderDismissTimer?.invalidate()
+        reminderDismissTimer = Timer.scheduledTimer(withTimeInterval: 6, repeats: false) { [weak self] _ in
+            Task { @MainActor in self?.dismissReminder() }
+        }
+        return true
+    }
+
+    private func dismissReminder() {
+        reminderDismissTimer?.invalidate(); reminderDismissTimer = nil
+        // If the pointer arrived while it was showing, it is now a normal open panel.
+        guard !hover.isOpen else { return }
+        taskModel.reminderContext = nil
+        panelState.page = 0
+        let target = geometry.collapsed
+        hover.activeFrame = target
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.22
+            panel.animator().setFrame(target, display: true)
+        }, completionHandler: { [weak self] in
+            Task { @MainActor in self?.host.isHidden = true }
+        })
     }
 
     // MARK: - export

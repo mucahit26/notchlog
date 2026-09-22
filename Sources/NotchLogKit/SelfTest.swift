@@ -131,7 +131,87 @@ public enum SelfTest {
         }
 
         checkRetention(&c, log: log)
+        checkTasks(&c, log: log)
         return c.report
+    }
+
+    /// Tasks are user-authored content living in the same database as sampled
+    /// telemetry, so the things worth proving are that retention cannot eat them and
+    /// that an app association survives the app disappearing from the metrics tables.
+    private static func checkTasks(_ c: inout Ctx, log: (String) -> Void) {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("notchlog-tasks-\(UUID().uuidString).sqlite")
+        defer {
+            for suffix in ["", "-wal", "-shm"] {
+                try? FileManager.default.removeItem(atPath: tmp.path + suffix)
+            }
+        }
+
+        do {
+            let db = try Database(url: tmp)
+            let chrome = TaskApp(name: "Google Chrome", bundleID: "com.google.Chrome")
+            let excel = TaskApp(name: "Microsoft Excel", bundleID: "com.microsoft.Excel")
+
+            let id = try db.createTask(title: "Write the thing", notes: "with detail",
+                                       apps: [chrome, excel])
+            c.check("task: created with an id", id > 0)
+
+            let open = try db.openTasks()
+            c.equal("task: appears in the open list", open.count, 1)
+            c.equal("task: title round-trips", open.first?.title, "Write the thing")
+            c.equal("task: notes round-trip", open.first?.notes, "with detail")
+            c.equal("task: both apps associated", open.first?.apps.count, 2)
+
+            // Matching is by bundle id first, because names change with localisation.
+            let byBundle = try db.openTasks(forBundleID: "com.google.Chrome", name: nil)
+            c.equal("task: matched by bundle id", byBundle.count, 1)
+            let byName = try db.openTasks(forBundleID: nil, name: "Microsoft Excel")
+            c.equal("task: matched by display name", byName.count, 1)
+            let noMatch = try db.openTasks(forBundleID: "com.apple.Safari", name: "Safari")
+            c.equal("task: unrelated app does not match", noMatch.count, 0)
+
+            // Reminders fire once per app per day.
+            c.equal("task: first reminder is due",
+                    try db.shouldRemind(taskID: id, bundleID: "com.google.Chrome"), true)
+            try db.markReminded(taskID: id, bundleID: "com.google.Chrome")
+            c.equal("task: second reminder same day is suppressed",
+                    try db.shouldRemind(taskID: id, bundleID: "com.google.Chrome"), false)
+            c.equal("task: reminder is due again tomorrow",
+                    try db.shouldRemind(taskID: id, bundleID: "com.google.Chrome",
+                                        now: Date().addingTimeInterval(26 * 3600)), true)
+
+            // Completing moves it to the archive with a date, and it can come back.
+            try db.setTaskCompleted(id: id, completed: true)
+            c.equal("task: leaves the open list once done", try db.openTasks().count, 0)
+            let archived = try db.completedTasks()
+            c.equal("task: appears in the archive", archived.count, 1)
+            c.check("task: completion date recorded", archived.first?.completedAt != nil)
+            c.equal("task: apps survive completion", archived.first?.apps.count, 2)
+            c.equal("task: a completed task is not reminded about",
+                    try db.openTasks(forBundleID: "com.google.Chrome", name: nil).count, 0)
+            try db.setTaskCompleted(id: id, completed: false)
+            c.equal("task: reopening restores it", try db.openTasks().count, 1)
+
+            // The important one: retention purges the metrics `app` table, so a task
+            // associated with an app that has not been sampled recently must not lose
+            // its link. That is why task_app stores names, not foreign keys.
+            _ = try Retention().run(on: db)
+            let afterPurge = try db.openTasks()
+            c.equal("task: survives a retention pass", afterPurge.count, 1)
+            c.equal("task: associations survive a retention pass", afterPurge.first?.apps.count, 2)
+            c.equal("task: still matches its app after purge",
+                    try db.openTasks(forBundleID: "com.google.Chrome", name: nil).count, 1)
+
+            let counts = try db.taskCounts()
+            c.equal("task: counts add up", counts.open, 1)
+
+            try db.deleteTask(id: id)
+            c.equal("task: delete removes it", try db.openTasks().count, 0)
+
+            log("  tasks: create, match, remind, complete, reopen and purge-survival verified")
+        } catch {
+            c.report.failures.append("task check failed: \(error)")
+        }
     }
 
     /// Exercises rollup and purge against a throwaway database.

@@ -117,6 +117,39 @@ public final class Database: @unchecked Sendable {
             reason  TEXT
         );
 
+        -- Notes and to-dos the user typed. Unlike every other table here this is
+        -- authored content, not sampled telemetry: retention must never touch it, and
+        -- it is deliberately NOT linked to the `app` table, whose rows are purged once
+        -- an application stops appearing in samples. A task tied to an app you have not
+        -- opened in a week would otherwise lose its association silently.
+        CREATE TABLE IF NOT EXISTS task (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            title        TEXT NOT NULL,
+            notes        TEXT NOT NULL DEFAULT '',
+            created_at   INTEGER NOT NULL,
+            completed_at INTEGER              -- NULL while the task is open
+        );
+        CREATE INDEX IF NOT EXISTS idx_task_state ON task(completed_at, created_at DESC);
+
+        -- Applications a task is associated with, stored by name and bundle id rather
+        -- than by a foreign key, for the reason above.
+        CREATE TABLE IF NOT EXISTS task_app (
+            task_id   INTEGER NOT NULL REFERENCES task(id) ON DELETE CASCADE,
+            app_name  TEXT NOT NULL,
+            bundle_id TEXT,
+            PRIMARY KEY (task_id, app_name)
+        ) WITHOUT ROWID;
+        CREATE INDEX IF NOT EXISTS idx_task_app_bundle ON task_app(bundle_id);
+
+        -- Remembers that a reminder already fired, so a task is surfaced once per
+        -- launch rather than on every notification the workspace sends.
+        CREATE TABLE IF NOT EXISTS task_reminder (
+            task_id   INTEGER NOT NULL REFERENCES task(id) ON DELETE CASCADE,
+            bundle_id TEXT NOT NULL,
+            shown_at  INTEGER NOT NULL,
+            PRIMARY KEY (task_id, bundle_id)
+        ) WITHOUT ROWID;
+
         CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
         """)
     }

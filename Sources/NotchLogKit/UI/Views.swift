@@ -14,6 +14,7 @@ public struct ExpandedView: View {
     @ObservedObject var panel: PanelState
     @ObservedObject var calendarModel: CalendarModel
     @ObservedObject var calendarService: CalendarService
+    @ObservedObject var taskModel: TaskModel
     let topInset: CGFloat
     let onExport: () -> Void
     let onRevealData: () -> Void
@@ -23,6 +24,7 @@ public struct ExpandedView: View {
                 panel: PanelState,
                 calendarModel: CalendarModel,
                 calendarService: CalendarService,
+                taskModel: TaskModel,
                 topInset: CGFloat,
                 onExport: @escaping () -> Void,
                 onRevealData: @escaping () -> Void = {},
@@ -31,6 +33,7 @@ public struct ExpandedView: View {
         self.panel = panel
         self.calendarModel = calendarModel
         self.calendarService = calendarService
+        self.taskModel = taskModel
         self.topInset = topInset
         self.onExport = onExport
         self.onRevealData = onRevealData
@@ -69,19 +72,26 @@ public struct ExpandedView: View {
     @ViewBuilder
     private var pages: some View {
         ZStack {
-            if panel.page == 0 {
-                metricsPage
-                    .transition(.asymmetric(insertion: .move(edge: .leading).combined(with: .opacity),
-                                            removal: .move(edge: .leading).combined(with: .opacity)))
-            } else {
+            switch panel.current {
+            case .live:
+                metricsPage.transition(slide)
+            case .calendar:
                 CalendarPage(model: calendarModel, calendarService: calendarService)
-                    .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
-                                            removal: .move(edge: .trailing).combined(with: .opacity)))
+                    .transition(slide)
+            case .newTask:
+                NewTaskPage(model: taskModel).transition(slide)
+            case .tasks:
+                TasksPage(model: taskModel).transition(slide)
             }
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .clipped()
         .animation(.easeOut(duration: 0.24), value: panel.page)
+    }
+
+    private var slide: AnyTransition {
+        .asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
+                    removal: .move(edge: .leading).combined(with: .opacity))
     }
 
     private var metricsPage: some View {
@@ -307,14 +317,28 @@ private struct PageDots: View {
     let count: Int
     let select: (Int) -> Void
 
+    /// With four pages, bare dots stop being navigable — you have to count them. The
+    /// active one names itself instead.
+    private static let names = ["Live", "Calendar", "New task", "Tasks"]
+
     var body: some View {
         HStack(spacing: 6) {
             ForEach(0..<count, id: \.self) { index in
-                Circle()
-                    .fill(index == current ? Color.primary.opacity(0.65)
-                                           : Color.primary.opacity(0.18))
-                    .frame(width: 5, height: 5)
-                    .onTapGesture { select(index) }
+                if index == current {
+                    Text(index < Self.names.count ? Self.names[index] : "\(index + 1)")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(Color.primary.opacity(0.10)))
+                } else {
+                    Circle()
+                        .fill(Color.primary.opacity(0.18))
+                        .frame(width: 5, height: 5)
+                        .contentShape(Rectangle().inset(by: -6))
+                        .onTapGesture { select(index) }
+                        .help(index < Self.names.count ? Self.names[index] : "")
+                }
             }
         }
         .help("Swipe left or right with two fingers to switch pages")

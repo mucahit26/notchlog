@@ -21,6 +21,18 @@ public enum PanelPreview {
         let db = try database ?? seededDatabase()
         let calendarService = CalendarService()
         let calendarModel = CalendarModel(database: db, service: calendarService)
+        let taskModel = TaskModel(database: db)
+        if page == PanelState.Page.newTask.rawValue || page == PanelState.Page.tasks.rawValue {
+            seedTasks(db)
+            taskModel.loadInstalledApps()
+            taskModel.reload()
+            if page == PanelState.Page.newTask.rawValue {
+                taskModel.draftTitle = "Ship the notch task pages"
+                taskModel.draftNotes = "Capture form plus a list, with a reminder when the associated app launches."
+            } else {
+                taskModel.reminderContext = "Google Chrome"
+            }
+        }
         if page == 1 {
             calendarModel.reloadMonth()
             calendarModel.reloadSelectedDay()
@@ -29,7 +41,7 @@ public enum PanelPreview {
         let pageSize = NotchGeometry.size(forPage: page)
         let view = ExpandedView(model: model, panel: panelState,
                                 calendarModel: calendarModel, calendarService: calendarService,
-                                topInset: 45,
+                                taskModel: taskModel, topInset: 45,
                                 onExport: {}, onRevealData: {}, onQuit: {})
             .frame(width: pageSize.width, height: pageSize.height)
             // The material background has no backdrop to sample offscreen, so the
@@ -109,6 +121,31 @@ public enum PanelPreview {
         // Roll everything older than 24 h down into the daily table.
         _ = try Retention().run(on: db)
         return db
+    }
+
+    static func seedTasks(_ db: Database) {
+        guard (try? db.taskCounts().open) == 0 else { return }
+        let now = Date()
+        _ = try? db.createTask(
+            title: "Rewrite the onboarding email",
+            notes: "Current one buries the install step under three paragraphs of preamble.",
+            apps: [TaskApp(name: "Mail", bundleID: "com.apple.mail"),
+                   TaskApp(name: "Google Chrome", bundleID: "com.google.Chrome")],
+            now: now.addingTimeInterval(-3 * 3600))
+        _ = try? db.createTask(
+            title: "Check the Q3 spend figures against the invoices",
+            notes: "",
+            apps: [TaskApp(name: "Microsoft Excel", bundleID: "com.microsoft.Excel")],
+            now: now.addingTimeInterval(-26 * 3600))
+        _ = try? db.createTask(
+            title: "Idea: a heat map of when I actually focus, not just when the Mac is busy",
+            notes: "Cross the activity data with app-switch frequency — lots of switching probably means shallow work.",
+            apps: [],
+            now: now.addingTimeInterval(-50 * 3600))
+        let done = (try? db.createTask(title: "Fix the calendar entitlement", notes: "",
+                                       apps: [TaskApp(name: "Xcode", bundleID: "com.apple.dt.Xcode")],
+                                       now: now.addingTimeInterval(-72 * 3600))) ?? 0
+        try? db.setTaskCompleted(id: done, completed: true, now: now.addingTimeInterval(-20 * 3600))
     }
 
     static func sampleSnapshot() -> Snapshot {

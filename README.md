@@ -5,8 +5,10 @@ and it expands to show what is using your CPU, memory and network **right now**.
 that activity continuously so you can answer "what was my Mac doing at 3am?", and exports
 the last 24 hours as a plain text file.
 
-Two-finger swipe to the second page for a calendar: a month grid tinted by how hard your
-Mac worked each day, beside that day's events and busiest applications.
+Two-finger swipe between four pages: live metrics, a calendar whose month grid is tinted
+by how hard your Mac worked each day, a place to jot down tasks and ideas, and the list of
+what is still open. Tie a task to an application and the panel surfaces it by itself the
+next time that app launches.
 
 **It has no network code at all.** Not "it doesn't phone home" — there is no networking
 in the binary, CI fails the build if any appears, and you can verify it on your own machine
@@ -21,12 +23,19 @@ in one command.
                     │ Chrome   Chrome   Chrome  │
                     │ Xcode    Slack    Dropbox │
                     │ [ Export last 24 hours ]  │
-                    └──────────── ● ○ ──────────┘
+                    └────────── ●○○○ ──────────┘
                              ↕ two-finger swipe
                     ┌───────────────────────────┐
-                    │ M T W T F S S │ Sat, 19   │      ← page 2: activity heat map
-                    │ ░▓█░▓░░       │ 10:00 …   │        + your calendar events
+                    │ M T W T F S S │ Sat, 19   │      ← calendar: activity heat map
+                    │ ░▓█░▓░░       │ 10:00 …   │        + your events
                     │ █░▓█░░▓       │ Chrome 2h │
+                    ├───────────────────────────┤
+                    │ New task      │ ☑ Chrome  │      ← capture: what + which apps
+                    │ ______________│ ☐ Mail    │
+                    ├───────────────────────────┤
+                    │ 🔔 You opened Chrome      │      ← tasks: opens by itself when
+                    │ ○ Rewrite onboarding mail │        an associated app launches
+                    │ ● Fix the entitlement     │
                     └───────────────────────────┘
 ```
 
@@ -43,6 +52,7 @@ it does with that.
 | Permission prompts | **None for monitoring.** Calendar access is the one exception — see below. |
 | Subprocesses | Exactly two, by absolute path: `/bin/ps` and `/usr/bin/nettop`. |
 | Where data lives | `~/Library/Application Support/NotchLog/`, directory `0700`, database `0600`. |
+| Your notes | Tasks and ideas you type stay in that database. They are never exported, never purged, and there is no network to send them anywhere. |
 
 ### The one permission, and how to avoid it
 
@@ -176,13 +186,30 @@ dots. Swiping left goes forward, matching Safari's page gesture.
    that day, with the selected day's calendar events and busiest applications beside it.
    Daily summaries are kept for a year, so the heat map fills in as you use it; the
    detailed tables behind page 1 still only go back 7 days.
+3. **New task** — write down a task or an idea and tick the applications it belongs to.
+   The date is recorded automatically. `⌘↩` saves.
+4. **Tasks** — everything still open, with a **Done** tab for the archive. Tick a task to
+   complete it; the completion date is kept too. Click a row to expand its notes.
+
+### Reminders
+
+Tie a task to an application and NotchLog surfaces it the next time that app **launches
+from cold**. The panel opens by itself on the Tasks page, shows what was waiting, and
+closes again after six seconds. It never takes keyboard focus — you carry on typing
+wherever you were — and it stays quiet if you are already using the panel. Each task is
+surfaced at most once per app per day.
+
+Note the deliberate limitation: the trigger is a cold launch, not switching to an app. An
+application you never quit — Mail, a browser — will not remind you, because from the
+system's point of view it never opened. Tie those tasks to something you do open fresh, or
+just check page 4.
 
 ```bash
 notchlog selftest         # verify the parsers against your own system
 notchlog export 24        # write a report without using the UI
 notchlog sample 3         # print three live samples to the terminal
 notchlog retention        # force a rollup + purge now
-notchlog preview out.png  # render the panel to a PNG (--light, --calendar)
+notchlog preview out.png  # render a page to PNG (--light --calendar --new-task --tasks)
 notchlog calendar-test    # diagnose Calendar permission end to end
 ```
 
@@ -232,6 +259,10 @@ Storage is tiered, because a flat week at 10-second resolution would cost roughl
 - **Older than 7 days** — deleted from the detailed tables.
 - **Daily summaries** — one small row per app per day, kept for **a year** so the calendar
   heat map has history. A few dozen rows a day costs well under a megabyte annually.
+- **Tasks are never purged.** They are content you wrote, not telemetry, and are
+  deliberately stored without a foreign key to the metrics tables — an app row is deleted
+  once it stops appearing in samples, and a task tied to it would otherwise silently lose
+  its association.
 
 Rows that are simultaneously idle on every axis are not stored at all — on a typical
 desktop that takes roughly 400 running applications down to **64 stored rows per sample**.
@@ -296,7 +327,8 @@ Sources/NotchLogKit/
   Collect/   ProcessRunner, PSSource, NettopSource, DiskIOSource, AppIdentity, Sampler
   Storage/   Database, Retention, Queries, Exporter
   UI/        NotchGeometry, HoverTracker, NotchController, LiveModel, Views,
-             Palette, PanelState, CalendarPage, CalendarModel, CalendarService
+             Palette, PanelState, CalendarPage, CalendarModel, CalendarService,
+             NewTaskPage, TasksPage, TaskModel, InstalledApps
   Monitor.swift, SelfTest.swift
 Sources/NotchLog/     main.swift, AppDelegate.swift
 Scripts/              install.sh, uninstall.sh, bundle.sh, verify-no-network.sh
@@ -358,6 +390,15 @@ signed — there is no Developer ID to anchor the grant to — so macOS identifi
 hash of the binary, and rebuilding produces a different hash. Reinstalling after a code
 change can therefore look like a new app and ask once more. This is a consequence of
 shipping as source rather than as a notarized download; see *Install*.
+
+**A reminder never appears.** It only fires on a cold launch. Quit the application fully
+and open it again. Reminders are also limited to once per app per day — clear the limit
+with `sqlite3 ~/Library/Application\ Support/NotchLog/notchlog.sqlite "DELETE FROM task_reminder;"`.
+
+**I cannot type on the New task page.** The panel has to become key to receive
+keystrokes, which activates the app. That happens automatically when you swipe to that
+page, and the panel is pinned open while you are there so a stray pointer movement cannot
+discard your draft. Swiping away releases both.
 
 **Two-finger swipe does nothing.** It requires a trackpad or a Magic Mouse; a classic
 wheel mouse can scroll horizontally if it has a tilt wheel, and the page dots are always

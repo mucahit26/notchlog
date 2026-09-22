@@ -3,8 +3,21 @@ import SwiftUI
 /// Which page the expanded panel is showing.
 @MainActor
 public final class PanelState: ObservableObject {
-    public static let pageCount = 2
+    public enum Page: Int, CaseIterable {
+        case live = 0
+        case calendar = 1
+        case newTask = 2
+        case tasks = 3
+
+        /// Pages that contain text fields. The panel has to become key for these, which
+        /// activates the app, so it is done only where typing is the point.
+        var needsKeyboard: Bool { self == .newTask }
+    }
+
+    public static var pageCount: Int { Page.allCases.count }
+
     @Published public var page: Int = 0
+    public var current: Page { Page(rawValue: page) ?? .live }
 
     public init() {}
 

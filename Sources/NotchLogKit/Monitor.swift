@@ -23,6 +23,14 @@ public final class Monitor: @unchecked Sendable {
     /// Most recent sample, safe to read from any thread.
     public var latest: Snapshot? { latestBox.get() }
 
+    /// Fires when an application is launched from cold, carrying (bundle id, name).
+    /// Used to surface tasks the user associated with that app.
+    private let launchHandler = Atomic<(@Sendable (String?, String?) -> Void)?>(nil)
+    public var onAppLaunched: (@Sendable (String?, String?) -> Void)? {
+        get { launchHandler.get() }
+        set { launchHandler.set(newValue) }
+    }
+
     private let snapshotHandler = Atomic<(@Sendable (Snapshot) -> Void)?>(nil)
     private let errorHandler = Atomic<(@Sendable (String) -> Void)?>(nil)
 
@@ -204,6 +212,11 @@ public final class Monitor: @unchecked Sendable {
         let bundlePath = app.bundleURL?.path
         let name = bundlePath.map { AppIdentity.identify(execPath: $0 + "/Contents/MacOS/x").name }
             ?? app.localizedName ?? "unknown"
+        if launched, let cb = launchHandler.get() {
+            let bundleID = app.bundleIdentifier
+            let display = app.localizedName ?? name
+            DispatchQueue.main.async { cb(bundleID, display) }
+        }
         queue.async { [weak self] in
             try? self?.db.recordEvent(name: name, bundlePath: bundlePath,
                                       launched: launched, at: Date())

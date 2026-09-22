@@ -95,7 +95,10 @@ case "preview":
     // without putting anything on screen.
     let out = args.dropFirst().first ?? "panel.png"
     let dark = !args.contains("--light")
-    let page = args.contains("--calendar") ? 1 : 0
+    var page = 0
+    if args.contains("--calendar") { page = 1 }
+    if args.contains("--new-task") { page = 2 }
+    if args.contains("--tasks") { page = 3 }
     MainActor.assumeIsolated {
         _ = NSApplication.shared          // SwiftUI rendering needs an app instance
         NSApp.setActivationPolicy(.prohibited)
@@ -154,7 +157,7 @@ case "help", "--help", "-h":
       notchlog export [h]  write a report for the last h hours (default 24)
       notchlog sample [n]  print n live samples to the terminal
       notchlog retention   force a rollup and purge now
-      notchlog preview <f> render the panel to a PNG (--light, --calendar)
+      notchlog preview <f> render a page to PNG (--light --calendar --new-task --tasks)
       notchlog version
     """)
 case nil, "run":

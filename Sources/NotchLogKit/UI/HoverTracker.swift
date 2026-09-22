@@ -21,6 +21,11 @@ public final class HoverTracker {
     public var closeGrace: TimeInterval = 0.35
     public var exitMargin: CGFloat = 4
 
+    /// While locked, the panel will not close on its own. Set when a page owns the
+    /// keyboard: a draft would otherwise be destroyed the moment the pointer drifted
+    /// off the panel mid-sentence.
+    public private(set) var isLocked = false
+
     private var openTimer: Timer?
     private var pollTimer: Timer?
     private var outsideSince: Date?
@@ -56,8 +61,13 @@ public final class HoverTracker {
         }
     }
 
+    public func setLocked(_ locked: Bool) {
+        isLocked = locked
+        if locked { outsideSince = nil }
+    }
+
     private func poll() {
-        guard isOpen else { return }
+        guard isOpen, !isLocked else { return }
         let inside = activeFrame.insetBy(dx: -exitMargin, dy: -exitMargin)
             .contains(NSEvent.mouseLocation)
         if inside {
@@ -71,7 +81,14 @@ public final class HoverTracker {
         }
     }
 
+    /// Closes regardless of the lock — used when the user explicitly dismisses.
+    public func forceClose() {
+        isLocked = false
+        close()
+    }
+
     public func close() {
+        guard !isLocked else { return }
         pollTimer?.invalidate(); pollTimer = nil
         openTimer?.invalidate(); openTimer = nil
         outsideSince = nil

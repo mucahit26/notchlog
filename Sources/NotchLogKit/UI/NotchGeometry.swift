@@ -41,9 +41,16 @@ public struct NotchGeometry: Sendable {
     /// page would leave the other one half empty, so the panel animates between them.
     public static let expandedSize = NSSize(width: 660, height: 328)
     public static let calendarSize = NSSize(width: 660, height: 382)
+    public static let newTaskSize = NSSize(width: 680, height: 396)
+    public static let tasksSize = NSSize(width: 680, height: 404)
 
     public static func size(forPage page: Int) -> NSSize {
-        page == 1 ? calendarSize : expandedSize
+        switch PanelState.Page(rawValue: page) {
+        case .calendar: return calendarSize
+        case .newTask: return newTaskSize
+        case .tasks: return tasksSize
+        default: return expandedSize
+        }
     }
 
     /// Expanded panel, centred on the notch and clamped to stay on screen.
