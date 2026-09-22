@@ -26,6 +26,13 @@ public final class TaskModel: ObservableObject {
     @Published public private(set) var archive: [TaskItem] = []
     @Published public var showArchive = false
 
+    /// When set, only tasks associated with this application are listed.
+    ///
+    /// Cleared when the panel closes: a filter you cannot see the origin of is worse
+    /// than no filter, and the panel reopening on a silently narrowed list would look
+    /// like tasks had gone missing.
+    @Published public var filterApp: String?
+
     // Picker
     @Published public private(set) var installed: [InstalledApp] = []
     @Published public private(set) var isScanning = false
@@ -76,6 +83,24 @@ public final class TaskModel: ObservableObject {
         guard let bundle = app.bundleID else { return false }
         return runningBundleIDs.contains(bundle)
     }
+
+    public func toggleFilter(_ appName: String) {
+        filterApp = (filterApp == appName) ? nil : appName
+    }
+
+    public func clearFilter() { filterApp = nil }
+
+    private func matchesFilter(_ task: TaskItem) -> Bool {
+        guard let filterApp else { return true }
+        return task.apps.contains { $0.name == filterApp }
+    }
+
+    /// Open tasks narrowed to the current filter, ungrouped — once you have asked for
+    /// one application, splitting by "is it running" answers a question you just
+    /// answered yourself.
+    public var filteredOpen: [TaskItem] { open.filter(matchesFilter) }
+
+    public var filteredArchive: [TaskItem] { archive.filter(matchesFilter) }
 
     /// Open tasks split into the ones you could act on right now and the rest.
     ///
@@ -164,6 +189,7 @@ public final class TaskModel: ObservableObject {
 
     public func reload() {
         let db = self.db
+        refreshRunning()
         Task.detached(priority: .userInitiated) {
             let result = Result { (try db.openTasks(), try db.completedTasks(limit: 50)) }
             await MainActor.run {

@@ -329,6 +329,7 @@ public final class NotchController {
         releaseKeyboard()
         reminderDismissTimer?.invalidate(); reminderDismissTimer = nil
         taskModel.reminderContext = nil
+        taskModel.clearFilter()
         // Always reopen on the live page; the other pages are somewhere you go.
         panelState.page = 0
         model.exportStatus = nil

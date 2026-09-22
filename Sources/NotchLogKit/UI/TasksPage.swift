@@ -27,9 +27,25 @@ public struct TasksPage: View {
                   systemImage: model.showArchive ? "archivebox" : "checklist")
                 .font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(.tertiary).tracking(0.4)
-            Text("\(model.showArchive ? model.archive.count : model.open.count)")
+            Text("\(model.showArchive ? model.filteredArchive.count : model.filteredOpen.count)")
                 .font(.system(size: 9, weight: .semibold).monospacedDigit())
                 .foregroundStyle(.secondary)
+            if let filter = model.filterApp {
+                Button {
+                    model.clearFilter()
+                } label: {
+                    HStack(spacing: 3) {
+                        Text("only \(filter)").font(.system(size: 9, weight: .medium))
+                        Image(systemName: "xmark").font(.system(size: 7, weight: .bold))
+                    }
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(Palette.cpu.opacity(0.2)))
+                    .foregroundStyle(Palette.cpu)
+                }
+                .buttonStyle(.borderless)
+                .help("Show every task again")
+            }
             Spacer(minLength: 8)
             Picker("", selection: $model.showArchive) {
                 Text("Open").tag(false)
@@ -66,12 +82,26 @@ public struct TasksPage: View {
     @ViewBuilder
     private var list: some View {
         if model.showArchive {
-            if model.archive.isEmpty {
-                emptyState("Nothing finished yet", hint: nil)
+            if model.filteredArchive.isEmpty {
+                emptyState(model.filterApp == nil ? "Nothing finished yet"
+                                                  : "Nothing finished for \(model.filterApp!)",
+                           hint: nil)
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 4) {
-                        ForEach(model.archive) { TaskRow(task: $0, model: model) }
+                        ForEach(model.filteredArchive) { TaskRow(task: $0, model: model) }
+                    }
+                    .padding(.trailing, 4)
+                }
+                .frame(maxHeight: .infinity)
+            }
+        } else if let filter = model.filterApp {
+            if model.filteredOpen.isEmpty {
+                emptyState("Nothing open for \(filter)", hint: nil)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 4) {
+                        ForEach(model.filteredOpen) { TaskRow(task: $0, model: model) }
                     }
                     .padding(.trailing, 4)
                 }
@@ -96,8 +126,7 @@ public struct TasksPage: View {
         return ScrollView {
             LazyVStack(alignment: .leading, spacing: 4) {
                 if !groups.active.isEmpty {
-                    sectionHeader("OPEN NOW", detail: model.activeAppNames.joined(separator: " · "),
-                                  accent: Palette.network)
+                    openNowHeader
                     ForEach(groups.active) { TaskRow(task: $0, model: model) }
                 }
                 if !groups.other.isEmpty {
@@ -109,6 +138,39 @@ public struct TasksPage: View {
             .padding(.trailing, 4)
         }
         .frame(maxHeight: .infinity)
+    }
+
+    /// The running app names double as filters — the information is already on screen,
+    /// so making it clickable costs nothing and saves scanning the list by eye.
+    private var openNowHeader: some View {
+        HStack(spacing: 5) {
+            Circle().fill(Palette.network).frame(width: 5, height: 5)
+            Text("OPEN NOW")
+                .font(.system(size: 8, weight: .semibold))
+                .foregroundStyle(Palette.network)
+                .tracking(0.5)
+            ForEach(model.activeAppNames, id: \.self) { name in
+                Button {
+                    model.toggleFilter(name)
+                } label: {
+                    Text(name)
+                        .font(.system(size: 9, weight: model.filterApp == name ? .semibold : .regular))
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(model.filterApp == name
+                                                   ? Palette.network.opacity(0.22)
+                                                   : Color.primary.opacity(0.07)))
+                        .foregroundStyle(model.filterApp == name
+                                         ? AnyShapeStyle(Palette.network)
+                                         : AnyShapeStyle(.secondary))
+                }
+                .buttonStyle(.borderless)
+                .help("Show only \(name) tasks")
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 4)
+        .padding(.bottom, 1)
     }
 
     private func sectionHeader(_ title: String, detail: String?, accent: Color?) -> some View {

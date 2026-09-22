@@ -190,6 +190,10 @@ page dots. Swiping left goes forward, matching Safari's page gesture.
    open and is noise while it is not. Tasks tied to no application stay in the lower
    group; there is no app they are waiting in. The split follows the workspace, so it
    re-sorts as you open and quit things.
+
+   The app names in the **Open now** heading are filters — click one to see only that
+   application's tasks, click it again to go back. The filter applies to the archive
+   too, and clears when the panel closes.
 2. **New task** — write down a task or an idea and pick the applications it belongs to,
    with the ones currently running offered first. The date is recorded automatically.
    `⌘↩` saves.
