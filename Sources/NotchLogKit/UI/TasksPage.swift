@@ -72,7 +72,7 @@ public struct TasksPage: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)
                 if !model.showArchive {
-                    Text("Swipe right to the previous page to write one down.")
+                    Text("Swipe left with two fingers to write one down.")
                         .font(.system(size: 10)).foregroundStyle(.tertiary)
                 }
             }

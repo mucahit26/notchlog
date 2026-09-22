@@ -318,14 +318,17 @@ private struct PageDots: View {
     let select: (Int) -> Void
 
     /// With four pages, bare dots stop being navigable — you have to count them. The
-    /// active one names itself instead.
-    private static let names = ["Live", "Calendar", "New task", "Tasks"]
+    /// active one names itself instead. Names come from the enum so reordering pages
+    /// cannot leave the labels pointing at the wrong ones.
+    private func name(_ index: Int) -> String {
+        PanelState.Page(rawValue: index)?.title ?? "\(index + 1)"
+    }
 
     var body: some View {
         HStack(spacing: 6) {
             ForEach(0..<count, id: \.self) { index in
                 if index == current {
-                    Text(index < Self.names.count ? Self.names[index] : "\(index + 1)")
+                    Text(name(index))
                         .font(.system(size: 9, weight: .semibold))
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 7)
@@ -337,7 +340,7 @@ private struct PageDots: View {
                         .frame(width: 5, height: 5)
                         .contentShape(Rectangle().inset(by: -6))
                         .onTapGesture { select(index) }
-                        .help(index < Self.names.count ? Self.names[index] : "")
+                        .help(name(index))
                 }
             }
         }

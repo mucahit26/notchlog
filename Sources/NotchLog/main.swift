@@ -95,10 +95,10 @@ case "preview":
     // without putting anything on screen.
     let out = args.dropFirst().first ?? "panel.png"
     let dark = !args.contains("--light")
-    var page = 0
-    if args.contains("--calendar") { page = 1 }
-    if args.contains("--new-task") { page = 2 }
-    if args.contains("--tasks") { page = 3 }
+    var page = PanelState.Page.live.rawValue
+    if args.contains("--calendar") { page = PanelState.Page.calendar.rawValue }
+    if args.contains("--new-task") { page = PanelState.Page.newTask.rawValue }
+    if args.contains("--tasks") { page = PanelState.Page.tasks.rawValue }
     MainActor.assumeIsolated {
         _ = NSApplication.shared          // SwiftUI rendering needs an app instance
         NSApp.setActivationPolicy(.prohibited)

@@ -33,7 +33,7 @@ public enum PanelPreview {
                 taskModel.reminderContext = "Google Chrome"
             }
         }
-        if page == 1 {
+        if page == PanelState.Page.calendar.rawValue {
             calendarModel.reloadMonth()
             calendarModel.reloadSelectedDay()
         }

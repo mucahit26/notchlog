@@ -5,9 +5,9 @@ and it expands to show what is using your CPU, memory and network **right now**.
 that activity continuously so you can answer "what was my Mac doing at 3am?", and exports
 the last 24 hours as a plain text file.
 
-Two-finger swipe between four pages: live metrics, a calendar whose month grid is tinted
-by how hard your Mac worked each day, a place to jot down tasks and ideas, and the list of
-what is still open. Tie a task to an application and the panel surfaces it by itself the
+Two-finger swipe between four pages: what is still on your list, a place to jot down
+tasks and ideas, live metrics, and a calendar whose month grid is tinted by how hard your
+Mac worked each day. Tie a task to an application and the panel surfaces it by itself the
 next time that app launches.
 
 **It has no network code at all.** Not "it doesn't phone home" — there is no networking
@@ -26,16 +26,15 @@ in one command.
                     └────────── ●○○○ ──────────┘
                              ↕ two-finger swipe
                     ┌───────────────────────────┐
-                    │ M T W T F S S │ Sat, 19   │      ← calendar: activity heat map
-                    │ ░▓█░▓░░       │ 10:00 …   │        + your events
-                    │ █░▓█░░▓       │ Chrome 2h │
-                    ├───────────────────────────┤
-                    │ New task      │ ☑ Chrome  │      ← capture: what + which apps
-                    │ ______________│ ☐ Mail    │
-                    ├───────────────────────────┤
                     │ 🔔 You opened Chrome      │      ← tasks: opens by itself when
                     │ ○ Rewrite onboarding mail │        an associated app launches
                     │ ● Fix the entitlement     │
+                    ├───────────────────────────┤
+                    │ New task      │ Chrome ×  │      ← capture: what + which apps
+                    │ ______________│ Mail  Xcode│
+                    ├───────────────────────────┤
+                    │ M T W T F S S │ Sat, 19   │      ← calendar: activity heat map
+                    │ ░▓█░▓░░       │ 10:00 …   │        + your events
                     └───────────────────────────┘
 ```
 
@@ -178,18 +177,20 @@ Move the pointer to the notch. After a brief delay the panel expands with live t
 lists for CPU, memory and network, a disk summary, and an export button. Move away and it
 collapses. There is nothing to click to open it and nothing to dismiss.
 
-**Two pages.** Swipe horizontally with two fingers to move between them, or click the page
-dots. Swiping left goes forward, matching Safari's page gesture.
+**Four pages.** Swipe horizontally with two fingers to move between them, or click the
+page dots. Swiping left goes forward, matching Safari's page gesture.
 
-1. **Live** — what is using CPU, memory and network right now.
-2. **Calendar** — a month grid where each day is tinted by how much CPU your Mac burned
+1. **Tasks** — everything still open, with a **Done** tab for the archive. Tick a task to
+   complete it; the completion date is kept too. Click a row to expand its notes. This is
+   the page the panel opens on, because checking the list is what you do most.
+2. **New task** — write down a task or an idea and pick the applications it belongs to,
+   with the ones currently running offered first. The date is recorded automatically.
+   `⌘↩` saves.
+3. **Live** — what is using CPU, memory and network right now.
+4. **Calendar** — a month grid where each day is tinted by how much CPU your Mac burned
    that day, with the selected day's calendar events and busiest applications beside it.
    Daily summaries are kept for a year, so the heat map fills in as you use it; the
-   detailed tables behind page 1 still only go back 7 days.
-3. **New task** — write down a task or an idea and tick the applications it belongs to.
-   The date is recorded automatically. `⌘↩` saves.
-4. **Tasks** — everything still open, with a **Done** tab for the archive. Tick a task to
-   complete it; the completion date is kept too. Click a row to expand its notes.
+   detailed tables behind the live page still only go back 7 days.
 
 ### Reminders
 
@@ -352,6 +353,9 @@ this. If it still triggers, the cursor is resting on the notch rather than passi
 **Numbers do not match Activity Monitor.** Expected for memory (helper double-counting) and
 network (lower bound). CPU should agree closely — if it does not, please open an issue with
 `notchlog sample 3` output.
+
+**The live metrics are not the first thing I see.** By design — the task list is page 1
+and the panel returns to it when it closes. Swipe left twice for the live page.
 
 **Nothing in the export.** It only contains what has been collected since installation.
 Coverage is stated in the report header.
