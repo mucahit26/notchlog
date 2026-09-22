@@ -62,7 +62,7 @@ public struct TasksPage: View {
         HStack(spacing: 6) {
             Image(systemName: "bell.badge.fill")
                 .font(.system(size: 10)).foregroundStyle(Palette.memory)
-            Text("You just opened \(context) — these were waiting")
+            Text(context)
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(.secondary)
             Spacer(minLength: 0)
@@ -273,6 +273,14 @@ private struct TaskRow: View {
                 Spacer(minLength: 0)
 
                 if hovering {
+                    Button {
+                        model.beginEdit(task)
+                    } label: {
+                        Image(systemName: "pencil").font(.system(size: 10))
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Edit this task")
+
                     Button {
                         model.delete(task)
                     } label: {

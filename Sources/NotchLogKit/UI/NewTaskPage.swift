@@ -32,6 +32,20 @@ public struct NewTaskPage: View {
 
     private var editor: some View {
         VStack(alignment: .leading, spacing: 9) {
+            HStack(spacing: 6) {
+                Text(model.isEditing_task ? "EDITING TASK" : "NEW TASK")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(model.isEditing_task ? AnyShapeStyle(Palette.cpu)
+                                                          : AnyShapeStyle(.tertiary))
+                    .tracking(0.4)
+                Spacer(minLength: 0)
+                if model.isEditing_task {
+                    Button("Cancel") { model.cancelEdit(); focus = nil }
+                        .buttonStyle(.borderless)
+                        .font(.system(size: 10))
+                }
+            }
+
             TextField("What needs doing?", text: $model.draftTitle, axis: .vertical)
                 .textFieldStyle(.plain)
                 .font(.system(size: 15, weight: .semibold))
@@ -64,7 +78,8 @@ public struct NewTaskPage: View {
 
             HStack(spacing: 8) {
                 Button(action: { model.save(); focus = .title }) {
-                    Label("Save task", systemImage: "arrow.down.to.line")
+                    Label(model.isEditing_task ? "Save changes" : "Save task",
+                          systemImage: model.isEditing_task ? "checkmark" : "arrow.down.to.line")
                         .font(.system(size: 11, weight: .medium))
                 }
                 .buttonStyle(.borderedProminent)
@@ -72,7 +87,9 @@ public struct NewTaskPage: View {
                 .disabled(!model.canSave)
                 .keyboardShortcut(.return, modifiers: .command)
 
-                Button("Clear") { model.clearDraft(); focus = .title }
+                Button(model.isEditing_task ? "Reset" : "Clear") {
+                    model.clearDraft(); focus = .title
+                }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .disabled(model.draftTitle.isEmpty && model.draftNotes.isEmpty
@@ -160,6 +177,14 @@ public struct NewTaskPage: View {
                         .buttonStyle(.borderless)
                         .font(.system(size: 9))
                 }
+            }
+
+            if !model.missingApps.isEmpty {
+                Text("Also linked to \(model.missingApps.map(\.name).joined(separator: ", ")) "
+                     + "— not installed any more, kept as-is")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             if model.draftApps.isEmpty {

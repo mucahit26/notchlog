@@ -93,6 +93,74 @@ public extension Database {
         }
     }
 
+    /// Replaces a task's editable fields and its whole app association set.
+    ///
+    /// The associations are rewritten rather than diffed: the set is small, and a
+    /// delete-then-insert inside one transaction cannot end up half applied.
+    func updateTask(id: Int64, title: String, notes: String, apps: [TaskApp],
+                    dueAt: Date?, eventID: String?) throws {
+        try sync {
+            try execRaw("BEGIN IMMEDIATE;")
+            do {
+                let stmt = try prepareRaw("""
+                    UPDATE task SET title = ?, notes = ?, due_at = ?, event_id = ?
+                     WHERE id = ?;
+                    """)
+                sqlite3_bind_text(stmt, 1, title, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(stmt, 2, notes, -1, SQLITE_TRANSIENT)
+                if let dueAt {
+                    sqlite3_bind_int64(stmt, 3, Int64(dueAt.timeIntervalSince1970.rounded()))
+                } else {
+                    sqlite3_bind_null(stmt, 3)
+                }
+                if let eventID {
+                    sqlite3_bind_text(stmt, 4, eventID, -1, SQLITE_TRANSIENT)
+                } else {
+                    sqlite3_bind_null(stmt, 4)
+                }
+                sqlite3_bind_int64(stmt, 5, id)
+                guard sqlite3_step(stmt) == SQLITE_DONE else {
+                    sqlite3_finalize(stmt)
+                    throw DatabaseError.exec(String(cString: sqlite3_errmsg(handle)))
+                }
+                sqlite3_finalize(stmt)
+
+                let wipe = try prepareRaw("DELETE FROM task_app WHERE task_id = ?;")
+                sqlite3_bind_int64(wipe, 1, id)
+                sqlite3_step(wipe)
+                sqlite3_finalize(wipe)
+
+                let link = try prepareRaw(
+                    "INSERT OR IGNORE INTO task_app(task_id, app_name, bundle_id) VALUES(?, ?, ?);")
+                defer { sqlite3_finalize(link) }
+                for app in apps {
+                    sqlite3_reset(link)
+                    sqlite3_clear_bindings(link)
+                    sqlite3_bind_int64(link, 1, id)
+                    sqlite3_bind_text(link, 2, app.name, -1, SQLITE_TRANSIENT)
+                    if let bundle = app.bundleID {
+                        sqlite3_bind_text(link, 3, bundle, -1, SQLITE_TRANSIENT)
+                    } else {
+                        sqlite3_bind_null(link, 3)
+                    }
+                    sqlite3_step(link)
+                }
+                try execRaw("COMMIT;")
+            } catch {
+                try? execRaw("ROLLBACK;")
+                throw error
+            }
+        }
+    }
+
+    /// Open tasks whose deadline has arrived or passed.
+    func tasksDue(by date: Date = Date()) throws -> [TaskItem] {
+        let end = Int64(Calendar.current.startOfDay(for: date)
+            .addingTimeInterval(86_400).timeIntervalSince1970)
+        return try loadTasks(where: "completed_at IS NULL AND due_at IS NOT NULL AND due_at < \(end)",
+                             order: "due_at ASC", limit: 50)
+    }
+
     func setTaskCompleted(id: Int64, completed: Bool, now: Date = Date()) throws {
         try sync {
             let stmt = try prepareRaw("UPDATE task SET completed_at = ? WHERE id = ?;")
@@ -166,6 +234,31 @@ public extension Database {
             defer { sqlite3_finalize(stmt) }
             guard sqlite3_step(stmt) == SQLITE_ROW else { return (0, 0) }
             return (Int(sqlite3_column_int64(stmt, 0)), Int(sqlite3_column_int64(stmt, 1)))
+        }
+    }
+
+    // MARK: - small key/value state
+
+    func metaValue(_ key: String) throws -> String? {
+        try sync {
+            let stmt = try prepareRaw("SELECT v FROM meta WHERE k = ?;")
+            defer { sqlite3_finalize(stmt) }
+            sqlite3_bind_text(stmt, 1, key, -1, SQLITE_TRANSIENT)
+            guard sqlite3_step(stmt) == SQLITE_ROW else { return nil }
+            return String(cString: sqlite3_column_text(stmt, 0))
+        }
+    }
+
+    func setMetaValue(_ key: String, _ value: String) throws {
+        try sync {
+            let stmt = try prepareRaw("""
+                INSERT INTO meta(k, v) VALUES(?, ?)
+                ON CONFLICT(k) DO UPDATE SET v = excluded.v;
+                """)
+            defer { sqlite3_finalize(stmt) }
+            sqlite3_bind_text(stmt, 1, key, -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(stmt, 2, value, -1, SQLITE_TRANSIENT)
+            sqlite3_step(stmt)
         }
     }
 

@@ -77,6 +77,11 @@ final class HoverHostView: NSView {
     override func mouseExited(with event: NSEvent) { onExit?() }
 }
 
+/// Key for the "day the deadline reminder last fired" row in `meta`. A file-scope
+/// constant rather than a static on the main-actor class, so the background task that
+/// reads it does not have to hop actors for a string.
+private let deadlineReminderKey = "last_due_reminder_day"
+
 /// A `.nonactivatingPanel` never becomes key, so a text field inside it receives no
 /// keystrokes. Overriding `canBecomeKey` allows it — at the cost of activating the app,
 /// which is why the controller only makes it key on the page where typing is the point.
@@ -100,11 +105,13 @@ public final class NotchController {
     private var previousFrontApp: NSRunningApplication?
     private var reminderDismissTimer: Timer?
     private var visibilityWatchdog: Timer?
+    private var deadlineTimer: Timer?
     private var reminderCursorOrigin: NSPoint?
     private let monitor: Monitor
     private var geometry: NotchGeometry
     private var pageObserver: AnyCancellable?
     private var editingObserver: AnyCancellable?
+    private var editTaskObserver: AnyCancellable?
 
     public init(monitor: Monitor) {
         self.monitor = monitor
@@ -159,6 +166,14 @@ public final class NotchController {
             guard let self, self.hover.isOpen else { return }
             self.panelState.advance(by: direction)
         }
+        editTaskObserver = taskModel.$editingTaskID
+            .removeDuplicates()
+            .sink { [weak self] id in
+                guard id != nil else { return }
+                Task { @MainActor in
+                    self?.panelState.page = PanelState.Page.newTask.rawValue
+                }
+            }
         editingObserver = taskModel.$isEditing
             .removeDuplicates()
             .sink { [weak self] _ in
@@ -210,6 +225,26 @@ public final class NotchController {
         }
         RunLoop.main.add(watchdog, forMode: .common)
         visibilityWatchdog = watchdog
+
+        // Deadlines: once shortly after launch — long enough that a login storm has
+        // settled and the panel is not fighting the Dock for attention — then on wake,
+        // and on a slow timer so a machine left running overnight still gets the day's
+        // reminder.
+        let firstCheck = Timer(timeInterval: 25, repeats: false) { [weak self] _ in
+            Task { @MainActor in self?.checkDeadlines() }
+        }
+        RunLoop.main.add(firstCheck, forMode: .common)
+
+        let recurring = Timer(timeInterval: 30 * 60, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.checkDeadlines() }
+        }
+        RunLoop.main.add(recurring, forMode: .common)
+        deadlineTimer = recurring
+
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in self?.checkDeadlines() }
+            }
     }
 
     /// Cheap assertion that the panel is still where it belongs.
@@ -355,6 +390,39 @@ public final class NotchController {
         panel.setFrame(frame, display: true)
     }
 
+    // MARK: - deadline reminders
+
+    /// Surfaces tasks whose deadline has arrived, once a day.
+    ///
+    /// Deliberately not triggered at the moment a deadline passes: that is midnight,
+    /// when nobody is looking. It fires the first time the machine is in use each day
+    /// and then stays quiet, which is why the day it last fired is persisted rather
+    /// than held in memory — a restart must not produce a second one.
+    private func checkDeadlines() {
+        let db = monitor.database
+        Task.detached(priority: .utility) {
+            let today = Retention.dayKey(for: Date())
+            let last = (try? db.metaValue(deadlineReminderKey)).flatMap { Int($0) }
+            guard last != today else { return }
+            guard let due = try? db.tasksDue(), !due.isEmpty else { return }
+
+            let overdue = due.filter(\.isOverdue).count
+            let dueToday = due.count - overdue
+            var parts: [String] = []
+            if overdue > 0 { parts.append("\(overdue) overdue") }
+            if dueToday > 0 { parts.append("\(dueToday) due today") }
+            let banner = parts.joined(separator: " · ")
+
+            let shown = await MainActor.run {
+                self.presentReminder(banner: banner, seconds: 8)
+            }
+            guard shown else { return }
+            try? db.setMetaValue(deadlineReminderKey, String(today))
+        }
+    }
+
+
+
     // MARK: - launch reminders
 
     /// An application the user tied a task to has just started.
@@ -376,7 +444,8 @@ public final class NotchController {
             // a launch arriving while the panel was already open consumed the reminder
             // without displaying it, and the task then stayed silent for the rest of
             // the day.
-            let shown = await MainActor.run { self.presentReminder(appName: name ?? key) }
+            let banner = "You just opened \(name ?? key) — these were waiting"
+            let shown = await MainActor.run { self.presentReminder(banner: banner) }
             guard shown else { return }
             for task in due { try? db.markReminded(taskID: task.id, bundleID: key) }
         }
@@ -384,10 +453,10 @@ public final class NotchController {
 
     /// Returns whether the reminder was actually put on screen.
     @discardableResult
-    private func presentReminder(appName: String) -> Bool {
+    private func presentReminder(banner: String, seconds: TimeInterval = 6) -> Bool {
         // Never interrupt someone already using the panel.
         guard !hover.isOpen else { return false }
-        taskModel.reminderContext = appName
+        taskModel.reminderContext = banner
         taskModel.reload()
         panelState.page = PanelState.Page.tasks.rawValue
 
@@ -403,7 +472,7 @@ public final class NotchController {
 
         reminderCursorOrigin = NSEvent.mouseLocation
         reminderDismissTimer?.invalidate()
-        reminderDismissTimer = Timer.scheduledTimer(withTimeInterval: 6, repeats: false) { [weak self] _ in
+        reminderDismissTimer = Timer.scheduledTimer(withTimeInterval: seconds, repeats: false) { [weak self] _ in
             Task { @MainActor in self?.dismissReminder() }
         }
         return true

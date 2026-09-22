@@ -208,7 +208,63 @@ public enum SelfTest {
             try db.deleteTask(id: id)
             c.equal("task: delete removes it", try db.openTasks().count, 0)
 
+            // --- editing -----------------------------------------------------------
+            let edited = try db.createTask(title: "Before", notes: "old", apps: [chrome])
+            try db.updateTask(id: edited, title: "After", notes: "new",
+                              apps: [excel], dueAt: nil, eventID: nil)
+            let afterEdit = try db.openTasks().first { $0.id == edited }
+            c.equal("edit: title replaced", afterEdit?.title, "After")
+            c.equal("edit: notes replaced", afterEdit?.notes, "new")
+            c.equal("edit: associations replaced, not merged", afterEdit?.apps.count, 1)
+            c.equal("edit: new association kept", afterEdit?.apps.first?.name, "Microsoft Excel")
+            c.equal("edit: old association dropped",
+                    try db.openTasks(forBundleID: "com.google.Chrome", name: nil)
+                        .contains { $0.id == edited }, false)
+            c.equal("edit: created date untouched",
+                    afterEdit.map { Int($0.createdAt.timeIntervalSince1970) },
+                    afterEdit.map { Int($0.createdAt.timeIntervalSince1970) })
+
+            // --- deadlines ----------------------------------------------------------
+            let day: TimeInterval = 86_400
+            let overdue = try db.createTask(title: "Overdue", notes: "", apps: [],
+                                            dueAt: Date().addingTimeInterval(-2 * day))
+            let todayDue = try db.createTask(title: "Today", notes: "", apps: [],
+                                             dueAt: Date())
+            let future = try db.createTask(title: "Later", notes: "", apps: [],
+                                           dueAt: Date().addingTimeInterval(5 * day))
+            let due = try db.tasksDue()
+            let dueIDs = Set(due.map(\.id))
+            c.check("deadline: overdue is due", dueIDs.contains(overdue))
+            c.check("deadline: today is due", dueIDs.contains(todayDue))
+            c.check("deadline: future is NOT due", !dueIDs.contains(future))
+            c.equal("deadline: soonest first", due.first?.id, overdue)
+            c.equal("deadline: overdue flagged",
+                    try db.openTasks().first { $0.id == overdue }?.isOverdue, true)
+            c.equal("deadline: today not flagged overdue",
+                    try db.openTasks().first { $0.id == todayDue }?.isOverdue, false)
+            c.equal("deadline: today flagged as due today",
+                    try db.openTasks().first { $0.id == todayDue }?.isDueToday, true)
+            c.equal("deadline: dated tasks sort above undated",
+                    try db.openTasks().first?.dueAt != nil, true)
+
+            // Completing removes it from the due list without touching the date.
+            try db.setTaskCompleted(id: overdue, completed: true)
+            // Evaluated up front: c.check takes a non-throwing autoclosure.
+            let stillDue = try db.tasksDue().contains { $0.id == overdue }
+            let keptDeadline = try db.completedTasks().first { $0.id == overdue }?.dueAt != nil
+            c.check("deadline: completed task is not due", !stillDue)
+            c.check("deadline: completed task keeps its deadline", keptDeadline)
+
+            // --- meta round-trip, which the once-a-day reminder depends on ----------
+            let unknownMeta = try db.metaValue("nope")
+            c.check("meta: unknown key is nil", unknownMeta == nil)
+            try db.setMetaValue("k", "20260922")
+            c.equal("meta: value round-trips", try db.metaValue("k"), "20260922")
+            try db.setMetaValue("k", "20260923")
+            c.equal("meta: value is replaced, not duplicated", try db.metaValue("k"), "20260923")
+
             log("  tasks: create, match, remind, complete, reopen and purge-survival verified")
+            log("  tasks: edit replaces fields and associations; deadlines sort and expire")
         } catch {
             c.report.failures.append("task check failed: \(error)")
         }

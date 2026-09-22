@@ -15,6 +15,15 @@ public final class TaskModel: ObservableObject {
     @Published public var appSearch = ""
     @Published public var saveMessage: String?
 
+    /// Non-nil while an existing task is being edited rather than a new one written.
+    /// The capture page doubles as the editor: same fields, same validation, one
+    /// implementation to keep correct.
+    @Published public private(set) var editingTaskID: Int64?
+    private var editingEventID: String?
+    /// The associations the task had when editing began, kept verbatim so the match
+    /// against installed apps can be redone once the scan finishes.
+    private var originalApps: [TaskApp] = []
+
     /// True only while a text field on the capture page holds focus.
     ///
     /// The panel is pinned open while this is set, so a sentence is never cut off
@@ -48,6 +57,10 @@ public final class TaskModel: ObservableObject {
 
     /// Bundle ids of applications running right now, refreshed as they come and go.
     @Published public private(set) var runningBundleIDs: Set<String> = []
+
+    /// Associations whose application is not installed any more. Kept so that editing
+    /// a task does not silently strip them.
+    @Published public private(set) var missingApps: [TaskApp] = []
 
     private let db: Database
     private let calendar: CalendarService
@@ -182,6 +195,8 @@ public final class TaskModel: ObservableObject {
             await MainActor.run {
                 self.installed = apps
                 self.isScanning = false
+                // A task may have been opened for editing before this finished.
+                self.matchAssociations()
             }
             // Icons come from LaunchServices and are not cheap. They are loaded after
             // the list is already usable, in small batches on the main actor: NSImage
@@ -226,19 +241,28 @@ public final class TaskModel: ObservableObject {
         let title = draftTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !title.isEmpty else { return }
         let notes = draftNotes.trimmingCharacters(in: .whitespacesAndNewlines)
-        let apps = installed.filter { draftApps.contains($0.id) }.map(\.taskApp)
+        let apps = installed.filter { draftApps.contains($0.id) }.map(\.taskApp) + missingApps
         let due = draftHasDueDate ? Calendar.current.startOfDay(for: draftDueDate) : nil
 
         // The event is written first, on the main actor, so its identifier can be stored
         // with the task. If the calendar refuses, the task is still saved — losing a
         // typed note because an event could not be created would be the wrong trade.
-        var eventID: String?
+        var eventID = editingEventID
         var calendarNote: String?
         if let due, draftAddToCalendar, canAddToCalendar {
-            switch calendar.createAllDayEvent(title: title, notes: notes, on: due) {
+            let outcome: Result<String, CalendarService.WriteError>
+            if let existing = editingEventID {
+                outcome = calendar.updateAllDayEvent(id: existing, title: title,
+                                                     notes: notes, on: due)
+            } else {
+                outcome = calendar.createAllDayEvent(title: title, notes: notes, on: due)
+            }
+            switch outcome {
             case .success(let id):
                 eventID = id.isEmpty ? nil : id
-                calendarNote = " and added to your calendar"
+                calendarNote = editingEventID == nil
+                    ? " and added to your calendar"
+                    : " and your calendar event was updated"
             case .failure(let error):
                 calendarNote = " (calendar: \(error.localizedDescription))"
             }
@@ -247,18 +271,34 @@ public final class TaskModel: ObservableObject {
         let db = self.db
         let storedEventID = eventID
         let note = calendarNote
+        let editing = editingTaskID
         Task.detached(priority: .userInitiated) {
-            let result = Result {
-                try db.createTask(title: title, notes: notes, apps: apps,
-                                  dueAt: due, eventID: storedEventID)
+            let result = Result { () -> Void in
+                if let editing {
+                    try db.updateTask(id: editing, title: title, notes: notes, apps: apps,
+                                      dueAt: due, eventID: storedEventID)
+                } else {
+                    _ = try db.createTask(title: title, notes: notes, apps: apps,
+                                          dueAt: due, eventID: storedEventID)
+                }
             }
             await MainActor.run {
                 switch result {
                 case .success:
+                    let wasEditing = self.editingTaskID != nil
+                    self.editingTaskID = nil
+                    self.editingEventID = nil
+                    self.originalApps = []
+                    self.missingApps = []
                     self.clearDraft()
-                    let reminder = apps.isEmpty
-                        ? "Saved"
-                        : "Saved — you'll be reminded when \(Self.describe(apps)) opens"
+                    let reminder: String
+                    if wasEditing {
+                        reminder = "Updated"
+                    } else if apps.isEmpty {
+                        reminder = "Saved"
+                    } else {
+                        reminder = "Saved — you'll be reminded when \(Self.describe(apps)) opens"
+                    }
                     self.saveMessage = reminder + (note ?? "")
                     self.reload()
                 case .failure(let error):
@@ -282,6 +322,54 @@ public final class TaskModel: ObservableObject {
             try? db.deleteTask(id: task.id)
             await MainActor.run { self.reload() }
         }
+    }
+
+    public var isEditing_task: Bool { editingTaskID != nil }
+
+    /// Loads a task into the draft fields so the capture page can edit it.
+    public func beginEdit(_ task: TaskItem) {
+        editingTaskID = task.id
+        editingEventID = task.eventID
+        draftTitle = task.title
+        draftNotes = task.notes
+        appSearch = ""
+        originalApps = task.apps
+        // The scan is asynchronous and may not have run yet — editing can be started
+        // from the task list without ever visiting this page. Matching against an empty
+        // list would mark every association as uninstalled, so the match is (re)done
+        // when the scan lands.
+        loadInstalledApps()
+        matchAssociations()
+        draftHasDueDate = task.dueAt != nil
+        draftDueDate = task.dueAt ?? Calendar.current.startOfDay(for: Date())
+        draftAddToCalendar = task.eventID != nil
+        saveMessage = nil
+    }
+
+    public func cancelEdit() {
+        editingTaskID = nil
+        editingEventID = nil
+        originalApps = []
+        missingApps = []
+        clearDraft()
+    }
+
+    /// Associations are stored by application name while the picker is keyed by install
+    /// path, so the two are reconciled here. Anything with no installed counterpart is
+    /// held aside rather than dropped — rewriting the task would otherwise silently
+    /// strip a link to an app that is merely not installed on this machine today.
+    private func matchAssociations() {
+        guard !originalApps.isEmpty else {
+            draftApps = []
+            missingApps = []
+            return
+        }
+        let names = Set(originalApps.map(\.name))
+        draftApps = Set(installed.filter { names.contains($0.name) }.map(\.id))
+        // Only trustworthy once there is a list to compare against.
+        missingApps = installed.isEmpty
+            ? []
+            : originalApps.filter { app in !installed.contains { $0.name == app.name } }
     }
 
     public func clearDraft() {

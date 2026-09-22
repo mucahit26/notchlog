@@ -202,6 +202,10 @@ page dots. Swiping left goes forward, matching Safari's page gesture.
    The app names in the **Open now** heading are filters — click one to see only that
    application's tasks, click it again to go back. The filter applies to the archive
    too, and clears when the panel closes.
+
+   Hovering a row reveals **edit** and **delete**. Editing opens the capture page with
+   the task loaded; the same form serves both, so there is one implementation to keep
+   correct rather than two that drift.
 2. **New task** — write down a task or an idea and pick the applications it belongs to,
    with the ones currently running offered first. The date is recorded automatically.
    `⌘↩` saves.
@@ -211,6 +215,10 @@ page dots. Swiping left goes forward, matching Safari's page gesture.
    overdue ones are marked in red and ones due today in orange. If the calendar refuses
    for any reason the task is still saved — losing something you typed because an event
    could not be created would be the wrong trade.
+
+   Editing a task rewrites its associations wholesale. An association to an application
+   that is not installed on this machine is kept rather than dropped, and the page says
+   so — the app may simply be missing today.
 3. **Live** — what is using CPU, memory and network right now.
 4. **Calendar** — a month grid where each day is tinted by how much CPU your Mac burned
    that day, with the selected day's calendar events and busiest applications beside it.
@@ -219,8 +227,15 @@ page dots. Swiping left goes forward, matching Safari's page gesture.
 
 ### Reminders
 
-Tie a task to an application and NotchLog surfaces it the next time that app **launches
-from cold**. The panel opens by itself on the Tasks page, shows what was waiting, and
+There are two, and both open the panel briefly without ever taking keyboard focus.
+
+**Deadlines.** Once a day, the first time the machine is in use, the panel shows what is
+overdue or due today. Deliberately not triggered at the moment a deadline passes — that
+is midnight, when nobody is looking. The day it last fired is stored, so restarting does
+not produce a second one.
+
+**Applications.** Tie a task to an application and NotchLog surfaces it the next time that
+app **launches from cold**. The panel opens by itself on the Tasks page, shows what was waiting, and
 closes again after six seconds. It never takes keyboard focus — you carry on typing
 wherever you were — and it stays quiet if you are already using the panel. Each task is
 surfaced at most once per app per day.

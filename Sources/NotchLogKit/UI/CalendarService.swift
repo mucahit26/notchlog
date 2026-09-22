@@ -174,6 +174,33 @@ public final class CalendarService: ObservableObject {
         }
     }
 
+    /// Moves an existing event NotchLog created, when its task's deadline changes.
+    ///
+    /// Editing an event the user already asked for is not a new write — declining to
+    /// move it would leave the calendar quietly disagreeing with the task.
+    @discardableResult
+    public func updateAllDayEvent(id: String, title: String, notes: String,
+                                  on date: Date) -> Result<String, WriteError> {
+        guard access == .granted else { return .failure(.noAccess) }
+        guard let event = store.event(withIdentifier: id) else {
+            // Deleted from Calendar since; make a fresh one rather than failing.
+            return createAllDayEvent(title: title, notes: notes, on: date)
+        }
+        let day = Calendar.current.startOfDay(for: date)
+        event.title = title
+        event.notes = notes.isEmpty ? nil : notes
+        event.isAllDay = true
+        event.startDate = day
+        event.endDate = day
+        do {
+            try store.save(event, span: .thisEvent, commit: true)
+            cache.removeAll()
+            return .success(event.eventIdentifier ?? id)
+        } catch {
+            return .failure(.underlying(error.localizedDescription))
+        }
+    }
+
     private static func hex(from color: NSColor) -> Int {
         guard let rgb = color.usingColorSpace(.sRGB) else { return 0x888888 }
         let r = Int((rgb.redComponent * 255).rounded())

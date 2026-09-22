@@ -27,10 +27,15 @@ public enum PanelPreview {
             taskModel.loadInstalledApps()
             taskModel.reload()
             if page == PanelState.Page.newTask.rawValue {
-                taskModel.draftTitle = "Ship the notch task pages"
-                taskModel.draftNotes = "Capture form plus a list, with a reminder when the associated app launches."
-                taskModel.draftHasDueDate = true
-                taskModel.draftDueDate = Date().addingTimeInterval(3 * 86_400)
+                // Shown in edit mode: it exercises more of the page — the cancel
+                // control, the pre-filled associations and the deadline.
+                if let existing = try? db.openTasks().first {
+                    taskModel.beginEdit(existing)
+                } else {
+                    taskModel.draftTitle = "Ship the notch task pages"
+                    taskModel.draftHasDueDate = true
+                    taskModel.draftDueDate = Date().addingTimeInterval(3 * 86_400)
+                }
             } else {
                 taskModel.reminderContext = "Google Chrome"
             }
