@@ -183,6 +183,13 @@ page dots. Swiping left goes forward, matching Safari's page gesture.
 1. **Tasks** — everything still open, with a **Done** tab for the archive. Tick a task to
    complete it; the completion date is kept too. Click a row to expand its notes. This is
    the page the panel opens on, because checking the list is what you do most.
+
+   Open tasks are split in two: **Open now** holds the ones tied to an application that
+   is actually running — with the running app marked — and everything else sits below
+   under **Not open right now**. A task about Outlook is worth seeing while Outlook is
+   open and is noise while it is not. Tasks tied to no application stay in the lower
+   group; there is no app they are waiting in. The split follows the workspace, so it
+   re-sorts as you open and quit things.
 2. **New task** — write down a task or an idea and pick the applications it belongs to,
    with the ones currently running offered first. The date is recorded automatically.
    `⌘↩` saves.

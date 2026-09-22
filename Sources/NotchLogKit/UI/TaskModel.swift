@@ -36,6 +36,9 @@ public final class TaskModel: ObservableObject {
 
     @Published public private(set) var errorMessage: String?
 
+    /// Bundle ids of applications running right now, refreshed as they come and go.
+    @Published public private(set) var runningBundleIDs: Set<String> = []
+
     private let db: Database
     /// Built once after the scan and then only read. Loading icons lazily from the view
     /// body meant mutating this dictionary during a SwiftUI update, on every scroll, for
@@ -44,6 +47,58 @@ public final class TaskModel: ObservableObject {
 
     public init(database: Database) {
         self.db = database
+        refreshRunning()
+        // The grouping below is only useful if it keeps up with what is open, so it
+        // follows the workspace rather than being sampled once when the page appears.
+        let centre = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.didLaunchApplicationNotification,
+                     NSWorkspace.didTerminateApplicationNotification] {
+            centre.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in self?.refreshRunning() }
+            }
+        }
+    }
+
+    public func refreshRunning() {
+        runningBundleIDs = Set(NSWorkspace.shared.runningApplications
+            .compactMap(\.bundleIdentifier))
+    }
+
+    /// True when at least one application this task is tied to is open right now.
+    public func isActive(_ task: TaskItem) -> Bool {
+        task.apps.contains { app in
+            guard let bundle = app.bundleID else { return false }
+            return runningBundleIDs.contains(bundle)
+        }
+    }
+
+    public func isRunning(_ app: TaskApp) -> Bool {
+        guard let bundle = app.bundleID else { return false }
+        return runningBundleIDs.contains(bundle)
+    }
+
+    /// Open tasks split into the ones you could act on right now and the rest.
+    ///
+    /// A task tied to nothing has no app to be waiting in, so it belongs with the
+    /// second group rather than claiming the top of the list.
+    public var groupedOpen: (active: [TaskItem], other: [TaskItem]) {
+        var active: [TaskItem] = []
+        var other: [TaskItem] = []
+        for task in open {
+            if isActive(task) { active.append(task) } else { other.append(task) }
+        }
+        return (active, other)
+    }
+
+    /// Names of the open applications that actually have tasks waiting, for the heading.
+    public var activeAppNames: [String] {
+        var names: [String] = []
+        for task in groupedOpen.active {
+            for app in task.apps where isRunning(app) && !names.contains(app.name) {
+                names.append(app.name)
+            }
+        }
+        return names
     }
 
     public var filteredApps: [InstalledApp] {

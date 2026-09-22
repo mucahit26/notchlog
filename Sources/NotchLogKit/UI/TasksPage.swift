@@ -65,29 +65,83 @@ public struct TasksPage: View {
 
     @ViewBuilder
     private var list: some View {
-        let rows = model.showArchive ? model.archive : model.open
-        if rows.isEmpty {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(model.showArchive ? "Nothing finished yet" : "No open tasks")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.secondary)
-                if !model.showArchive {
-                    Text("Swipe left with two fingers to write one down.")
-                        .font(.system(size: 10)).foregroundStyle(.tertiary)
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        } else {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 4) {
-                    ForEach(rows) { task in
-                        TaskRow(task: task, model: model)
+        if model.showArchive {
+            if model.archive.isEmpty {
+                emptyState("Nothing finished yet", hint: nil)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 4) {
+                        ForEach(model.archive) { TaskRow(task: $0, model: model) }
                     }
+                    .padding(.trailing, 4)
                 }
-                .padding(.trailing, 4)
+                .frame(maxHeight: .infinity)
             }
-            .frame(maxHeight: .infinity)
+        } else if model.open.isEmpty {
+            emptyState("No open tasks",
+                       hint: "Swipe left with two fingers to write one down.")
+        } else {
+            openList
         }
+    }
+
+    /// Open tasks, with the ones you could act on right now lifted to the top.
+    ///
+    /// The split is by whether an associated application is actually running: a task
+    /// about Outlook is worth seeing while Outlook is open and is noise while it is
+    /// not. Tasks tied to nothing sit in the second group — there is no app they are
+    /// waiting in.
+    private var openList: some View {
+        let groups = model.groupedOpen
+        return ScrollView {
+            LazyVStack(alignment: .leading, spacing: 4) {
+                if !groups.active.isEmpty {
+                    sectionHeader("OPEN NOW", detail: model.activeAppNames.joined(separator: " · "),
+                                  accent: Palette.network)
+                    ForEach(groups.active) { TaskRow(task: $0, model: model) }
+                }
+                if !groups.other.isEmpty {
+                    sectionHeader(groups.active.isEmpty ? "WAITING" : "NOT OPEN RIGHT NOW",
+                                  detail: nil, accent: nil)
+                    ForEach(groups.other) { TaskRow(task: $0, model: model) }
+                }
+            }
+            .padding(.trailing, 4)
+        }
+        .frame(maxHeight: .infinity)
+    }
+
+    private func sectionHeader(_ title: String, detail: String?, accent: Color?) -> some View {
+        HStack(spacing: 5) {
+            if let accent {
+                Circle().fill(accent).frame(width: 5, height: 5)
+            }
+            Text(title)
+                .font(.system(size: 8, weight: .semibold))
+                .foregroundStyle(accent == nil ? AnyShapeStyle(.quaternary) : AnyShapeStyle(accent!))
+                .tracking(0.5)
+            if let detail, !detail.isEmpty {
+                Text(detail)
+                    .font(.system(size: 9))
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 4)
+        .padding(.bottom, 1)
+    }
+
+    private func emptyState(_ title: String, hint: String?) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.secondary)
+            if let hint {
+                Text(hint).font(.system(size: 10)).foregroundStyle(.tertiary)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
@@ -129,13 +183,20 @@ private struct TaskRow: View {
                             .font(.system(size: 9).monospacedDigit())
                             .foregroundStyle(.tertiary)
                         ForEach(task.apps.prefix(3), id: \.self) { app in
-                            Text(app.name)
-                                .font(.system(size: 9))
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 1)
-                                .background(RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                    .fill(Color.primary.opacity(0.07)))
-                                .foregroundStyle(.secondary)
+                            let running = model.isRunning(app)
+                            HStack(spacing: 3) {
+                                if running {
+                                    Circle().fill(Palette.network).frame(width: 4, height: 4)
+                                }
+                                Text(app.name).font(.system(size: 9))
+                            }
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(running ? Palette.network.opacity(0.16)
+                                              : Color.primary.opacity(0.07)))
+                            .foregroundStyle(running ? AnyShapeStyle(Palette.network)
+                                                     : AnyShapeStyle(.secondary))
                         }
                         if task.apps.count > 3 {
                             Text("+\(task.apps.count - 3)")

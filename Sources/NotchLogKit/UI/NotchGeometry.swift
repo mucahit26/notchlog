@@ -67,7 +67,7 @@ public struct NotchGeometry: Sendable {
     public static let expandedSize = NSSize(width: 660, height: 328)
     public static let calendarSize = NSSize(width: 660, height: 382)
     public static let newTaskSize = NSSize(width: 680, height: 396)
-    public static let tasksSize = NSSize(width: 680, height: 404)
+    public static let tasksSize = NSSize(width: 680, height: 430)
 
     public static func size(forPage page: Int) -> NSSize {
         switch PanelState.Page(rawValue: page) {
