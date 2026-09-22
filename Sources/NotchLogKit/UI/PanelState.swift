@@ -12,6 +12,11 @@ public final class PanelState: ObservableObject {
         /// Pages that contain text fields. The panel has to become key for these, which
         /// activates the app, so it is done only where typing is the point.
         var needsKeyboard: Bool { self == .newTask }
+
+        /// Only the live page shows per-app numbers that change second to second.
+        /// Sampling at 2 s behind a task list is pure cost — it competes with typing
+        /// and scrolling for the main thread and changes nothing on screen.
+        var needsFastSampling: Bool { self == .live }
     }
 
     public static var pageCount: Int { Page.allCases.count }

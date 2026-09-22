@@ -282,8 +282,8 @@ Measured on a MacBook Air M3 (8 cores), running as the installed LaunchAgent:
 
 | | |
 |---|---|
-| CPU, panel closed | **~0.5% of one core** — ≈50 ms per 10-second sample |
-| CPU, panel open | a few percent, while sampling speeds up to 2 s and SwiftUI redraws |
+| CPU, panel closed | **~0.5% of one core** with ~550 processes running; **~0.8%** with ~860. The cost scales with how many processes the machine has, since every one of them is read each sample. |
+| CPU, panel open | a few percent on the live page, where sampling speeds up to 2 s. The calendar and task pages stay at the normal 10 s — they show nothing that changes second to second, so the faster rate would only compete with typing and scrolling. |
 | Memory | ~60 MB resident |
 | Disk | **~35 MB** steady state, hard-capped at 7 days |
 
@@ -397,8 +397,12 @@ with `sqlite3 ~/Library/Application\ Support/NotchLog/notchlog.sqlite "DELETE FR
 
 **I cannot type on the New task page.** The panel has to become key to receive
 keystrokes, which activates the app. That happens automatically when you swipe to that
-page, and the panel is pinned open while you are there so a stray pointer movement cannot
-discard your draft. Swiping away releases both.
+page, and is released when you leave.
+
+**The panel will not hide itself on the task pages.** It is pinned open only while a text
+field actually has focus, so a sentence is never cut off mid-word. Click outside the
+fields, or swipe to another page, and it hides normally again. Your draft is kept either
+way — it lives in memory, not in the panel, so closing the panel never discards it.
 
 **Two-finger swipe does nothing.** It requires a trackpad or a Magic Mouse; a classic
 wheel mouse can scroll horizontally if it has a tilt wheel, and the page dots are always

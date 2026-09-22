@@ -12,6 +12,15 @@ public final class TaskModel: ObservableObject {
     @Published public var appSearch = ""
     @Published public var saveMessage: String?
 
+    /// True only while a text field on the capture page holds focus.
+    ///
+    /// The panel is pinned open while this is set, so a sentence is never cut off
+    /// mid-word by the pointer drifting away. It is deliberately NOT pinned for the
+    /// whole page: the draft lives here in the model and survives the panel closing,
+    /// so there is nothing to protect once you stop typing — and a panel that never
+    /// hides is worse than one that hides a little eagerly.
+    @Published public var isEditing = false
+
     // List
     @Published public private(set) var open: [TaskItem] = []
     @Published public private(set) var archive: [TaskItem] = []
@@ -28,7 +37,10 @@ public final class TaskModel: ObservableObject {
     @Published public private(set) var errorMessage: String?
 
     private let db: Database
-    private var iconCache: [String: NSImage] = [:]
+    /// Built once after the scan and then only read. Loading icons lazily from the view
+    /// body meant mutating this dictionary during a SwiftUI update, on every scroll, for
+    /// every row that came into view — which is what made the picker feel sticky.
+    @Published private var icons: [String: NSImage] = [:]
 
     public init(database: Database) {
         self.db = database
@@ -40,16 +52,30 @@ public final class TaskModel: ObservableObject {
         return installed.filter { $0.name.localizedCaseInsensitiveContains(query) }
     }
 
+    /// The apps already ticked, in the order they appear in the list.
+    public var selectedApps: [InstalledApp] {
+        installed.filter { draftApps.contains($0.id) }
+    }
+
+    public var unselectedApps: [InstalledApp] {
+        filteredApps.filter { !draftApps.contains($0.id) }
+    }
+
+    /// Apps that are running right now, offered first — the task you are writing down
+    /// is usually about something already in front of you.
+    public var runningApps: [InstalledApp] {
+        let live = Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier))
+        return installed.filter { app in
+            guard let bundle = app.bundleID, live.contains(bundle) else { return false }
+            return !draftApps.contains(app.id)
+        }
+    }
+
     public var canSave: Bool {
         !draftTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    public func icon(for app: InstalledApp) -> NSImage? {
-        if let hit = iconCache[app.path] { return hit }
-        guard let image = InstalledApps.icon(forPath: app.path) else { return nil }
-        iconCache[app.path] = image
-        return image
-    }
+    public func icon(for app: InstalledApp) -> NSImage? { icons[app.path] }
 
     // MARK: - loading
 
@@ -62,6 +88,15 @@ public final class TaskModel: ObservableObject {
                 self.installed = apps
                 self.isScanning = false
             }
+            // Icons come from LaunchServices and are not cheap. Load them in one pass
+            // after the list is already usable, then publish once.
+            var loaded: [String: NSImage] = [:]
+            for app in apps {
+                if let image = await MainActor.run(body: { InstalledApps.icon(forPath: app.path) }) {
+                    loaded[app.path] = image
+                }
+            }
+            await MainActor.run { self.icons = loaded }
         }
     }
 

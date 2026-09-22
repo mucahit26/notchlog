@@ -4,7 +4,7 @@ import SwiftUI
 /// Page 3: capture a task or idea and associate it with applications.
 ///
 /// Everything typed here is the user's own content, stored alongside the metrics but
-/// never purged by retention and never part of an export unless asked for.
+/// never purged by retention and never part of an export.
 public struct NewTaskPage: View {
     @ObservedObject var model: TaskModel
     @FocusState private var focus: Field?
@@ -15,51 +15,54 @@ public struct NewTaskPage: View {
 
     public var body: some View {
         HStack(alignment: .top, spacing: 16) {
-            editor.frame(width: 336)
+            editor.frame(width: 352)
             Divider().opacity(0.4)
             appPicker.frame(maxWidth: .infinity, alignment: .leading)
         }
         .onAppear {
             model.loadInstalledApps()
-            // The panel is opened by a swipe, not a click, so nothing has focus yet.
+            // The panel arrives by a swipe, not a click, so nothing has focus yet.
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { focus = .title }
         }
+        .onChange(of: focus) { _, newValue in model.isEditing = newValue != nil }
+        .onDisappear { model.isEditing = false }
     }
 
     // MARK: - left: what needs doing
 
     private var editor: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label("NEW TASK", systemImage: "square.and.pencil")
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.tertiary).tracking(0.4)
-
-            TextField("What needs doing?", text: $model.draftTitle)
+        VStack(alignment: .leading, spacing: 9) {
+            TextField("What needs doing?", text: $model.draftTitle, axis: .vertical)
                 .textFieldStyle(.plain)
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 15, weight: .semibold))
+                .lineLimit(1...2)
                 .focused($focus, equals: .title)
-                .onSubmit { focus = .notes }
-
-            Divider().opacity(0.4)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(field(focused: focus == .title))
 
             ZStack(alignment: .topLeading) {
                 if model.draftNotes.isEmpty {
                     Text("Details, context, why it matters…")
                         .font(.system(size: 11))
                         .foregroundStyle(.tertiary)
-                        .padding(.top, 2)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 9)
                         .allowsHitTesting(false)
                 }
                 TextEditor(text: $model.draftNotes)
                     .font(.system(size: 11))
                     .scrollContentBackground(.hidden)
                     .focused($focus, equals: .notes)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 5)
             }
-            .frame(height: 96)
+            .frame(maxHeight: .infinity)
+            .background(field(focused: focus == .notes))
 
             HStack(spacing: 8) {
-                Button(action: { model.save() }) {
-                    Label("Save", systemImage: "checkmark")
+                Button(action: { model.save(); focus = .title }) {
+                    Label("Save task", systemImage: "arrow.down.to.line")
                         .font(.system(size: 11, weight: .medium))
                 }
                 .buttonStyle(.borderedProminent)
@@ -72,20 +75,36 @@ public struct NewTaskPage: View {
                     .controlSize(.small)
                     .disabled(model.draftTitle.isEmpty && model.draftNotes.isEmpty
                               && model.draftApps.isEmpty)
-
-                if let message = model.saveMessage {
-                    Text(message)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
                 Spacer(minLength: 0)
             }
-            Text("⌘↩ to save · today's date is recorded automatically")
-                .font(.system(size: 9)).foregroundStyle(.quaternary)
-            Spacer(minLength: 0)
+
+            statusLine
         }
+    }
+
+    @ViewBuilder
+    private var statusLine: some View {
+        if let message = model.saveMessage {
+            Label(message, systemImage: "checkmark.circle.fill")
+                .font(.system(size: 10))
+                .foregroundStyle(Palette.network)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+        } else {
+            Text("Command-Return saves · today's date is recorded automatically.")
+                .font(.system(size: 9))
+                .foregroundStyle(.quaternary)
+        }
+    }
+
+    private func field(focused: Bool) -> some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(Color.primary.opacity(0.05))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(focused ? Palette.cpu.opacity(0.7)
+                                          : Color.primary.opacity(0.08),
+                                  lineWidth: focused ? 1.2 : 0.8))
     }
 
     // MARK: - right: which apps should remind me
@@ -93,32 +112,72 @@ public struct NewTaskPage: View {
     private var appPicker: some View {
         VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 6) {
-                Label("REMIND ME IN", systemImage: "app.badge.checkmark")
+                Text("REMIND ME IN")
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(.tertiary).tracking(0.4)
                 Spacer(minLength: 0)
                 if !model.draftApps.isEmpty {
-                    Text("\(model.draftApps.count) selected")
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(Palette.cpu)
+                    Button("Clear") { model.draftApps.removeAll() }
+                        .buttonStyle(.borderless)
+                        .font(.system(size: 9))
                 }
             }
 
-            TextField("Search applications", text: $model.appSearch)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: 11))
-                .focused($focus, equals: .search)
-
-            if model.isScanning {
-                Text("Scanning applications…")
-                    .font(.system(size: 10)).foregroundStyle(.tertiary)
+            if model.draftApps.isEmpty {
+                Text("Pick the apps that should remind you. Leave empty for a plain note.")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                FlowLayout(spacing: 4, lineSpacing: 4) {
+                    ForEach(model.selectedApps) { app in
+                        AppChip(app: app, model: model, selected: true) {
+                            model.draftApps.remove(app.id)
+                        }
+                    }
+                }
             }
 
+            HStack(spacing: 5) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 10)).foregroundStyle(.tertiary)
+                TextField("Search", text: $model.appSearch)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 11))
+                    .focused($focus, equals: .search)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(field(focused: focus == .search))
+
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 1) {
-                    ForEach(model.filteredApps) { app in
-                        AppToggle(app: app, model: model,
-                                  selected: model.draftApps.contains(app.id)) {
+                VStack(alignment: .leading, spacing: 8) {
+                    if !model.runningApps.isEmpty && model.appSearch.isEmpty {
+                        section("RUNNING NOW", model.runningApps)
+                    }
+                    section(model.appSearch.isEmpty ? "ALL APPLICATIONS" : "MATCHES",
+                            model.unselectedApps)
+                    if model.isScanning {
+                        Text("Scanning applications…")
+                            .font(.system(size: 10)).foregroundStyle(.tertiary)
+                    }
+                }
+            }
+            .frame(maxHeight: .infinity)
+        }
+    }
+
+    @ViewBuilder
+    private func section(_ title: String, _ apps: [InstalledApp]) -> some View {
+        if !apps.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(.quaternary).tracking(0.4)
+                FlowLayout(spacing: 4, lineSpacing: 4) {
+                    ForEach(apps) { app in
+                        AppChip(app: app, model: model,
+                                selected: model.draftApps.contains(app.id)) {
                             if model.draftApps.contains(app.id) {
                                 model.draftApps.remove(app.id)
                             } else {
@@ -128,40 +187,41 @@ public struct NewTaskPage: View {
                     }
                 }
             }
-            .frame(maxHeight: .infinity)
-            .padding(.bottom, 2)
-
-            Text("Leave empty for a task with no reminder")
-                .font(.system(size: 9)).foregroundStyle(.quaternary)
         }
     }
 }
 
-private struct AppToggle: View {
+private struct AppChip: View {
     let app: InstalledApp
     @ObservedObject var model: TaskModel
     let selected: Bool
     let toggle: () -> Void
 
     var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: selected ? "checkmark.square.fill" : "square")
-                .font(.system(size: 11))
-                .foregroundStyle(selected ? Palette.cpu : Color.secondary.opacity(0.6))
+        HStack(spacing: 4) {
             if let icon = model.icon(for: app) {
-                Image(nsImage: icon).resizable().frame(width: 14, height: 14)
+                Image(nsImage: icon).resizable().frame(width: 13, height: 13)
             } else {
                 Image(systemName: "app.dashed")
-                    .font(.system(size: 10)).foregroundStyle(.quaternary).frame(width: 14)
+                    .font(.system(size: 9)).foregroundStyle(.quaternary).frame(width: 13)
             }
-            Text(app.name).font(.system(size: 11)).lineLimit(1)
-            Spacer(minLength: 0)
+            Text(app.name)
+                .font(.system(size: 10, weight: selected ? .medium : .regular))
+                .lineLimit(1)
+            if selected {
+                Image(systemName: "xmark")
+                    .font(.system(size: 7, weight: .bold))
+                    .foregroundStyle(.secondary)
+            }
         }
-        .padding(.vertical, 2)
-        .padding(.horizontal, 4)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
         .background(
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(selected ? Palette.cpu.opacity(0.12) : Color.clear))
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(selected ? Palette.cpu.opacity(0.18) : Color.primary.opacity(0.06))
+                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .strokeBorder(selected ? Palette.cpu.opacity(0.55) : Color.clear,
+                                  lineWidth: 1)))
         .contentShape(Rectangle())
         .onTapGesture(perform: toggle)
     }

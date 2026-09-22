@@ -96,15 +96,19 @@ public final class NotchController {
     private let calendarService = CalendarService()
     private let taskModel: TaskModel
     private let hover = HoverTracker()
+    /// Whatever was frontmost before we took focus, so it can be handed back.
+    private var previousFrontApp: NSRunningApplication?
     private var reminderDismissTimer: Timer?
+    private var visibilityWatchdog: Timer?
+    private var reminderCursorOrigin: NSPoint?
     private let monitor: Monitor
     private var geometry: NotchGeometry
     private var pageObserver: AnyCancellable?
+    private var editingObserver: AnyCancellable?
 
     public init(monitor: Monitor) {
         self.monitor = monitor
-        let screen = NSScreen.main ?? NSScreen.screens[0]
-        self.geometry = NotchGeometry.current(for: screen)
+        self.geometry = NotchGeometry.current()
         self.calendarModel = CalendarModel(database: monitor.database,
                                            service: calendarService)
         self.taskModel = TaskModel(database: monitor.database)
@@ -155,6 +159,11 @@ public final class NotchController {
             guard let self, self.hover.isOpen else { return }
             self.panelState.advance(by: direction)
         }
+        editingObserver = taskModel.$isEditing
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                Task { @MainActor in self?.updateKeyboardOwnership() }
+            }
         pageObserver = panelState.$page
             .removeDuplicates()
             .sink { [weak self] page in
@@ -182,6 +191,34 @@ public final class NotchController {
             object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor in self?.screenParametersChanged() }
             }
+
+        // If anything hides the app, the notch panel goes with it and the app looks
+        // like it quit while still running — with no way for the user to get it back.
+        // An earlier bug did exactly that, so recovery is now automatic rather than
+        // depending on never making that mistake again.
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.didHideNotification,
+            object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in
+                    NSApp.unhide(nil)
+                    self?.panel.orderFrontRegardless()
+                }
+            }
+
+        let watchdog = Timer(timeInterval: 20, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.ensurePanelVisible() }
+        }
+        RunLoop.main.add(watchdog, forMode: .common)
+        visibilityWatchdog = watchdog
+    }
+
+    /// Cheap assertion that the panel is still where it belongs.
+    private func ensurePanelVisible() {
+        guard !panel.isVisible || NSApp.isHidden else { return }
+        if NSApp.isHidden { NSApp.unhide(nil) }
+        panel.setFrame(hover.isOpen ? geometry.expanded(forPage: panelState.page)
+                                    : geometry.collapsed, display: false)
+        panel.orderFrontRegardless()
     }
 
     private func makeRootView() -> ExpandedView {
@@ -218,6 +255,7 @@ public final class NotchController {
         case .live:
             break
         }
+        monitor.setFastMode(hover.isOpen && panelState.current.needsFastSampling)
         updateKeyboardOwnership()
         guard hover.isOpen else { return }
         let target = geometry.expanded(forPage: page)
@@ -236,22 +274,45 @@ public final class NotchController {
     /// because a draft must not be destroyed by the pointer drifting off the panel.
     private func updateKeyboardOwnership() {
         let wantsKeyboard = hover.isOpen && panelState.current.needsKeyboard
-        hover.setLocked(wantsKeyboard)
+        // Pinned only while something is actually being typed into, not for the whole
+        // page — see TaskModel.isEditing.
+        hover.setLocked(wantsKeyboard && taskModel.isEditing)
         if wantsKeyboard {
-            NSApp.activate(ignoringOtherApps: true)
-            panel.makeKeyAndOrderFront(nil)
-        } else if panel.isKeyWindow {
-            panel.resignKey()
-            // Hand the foreground back rather than sitting on it as an accessory app.
-            NSApp.hide(nil)
+            if !panel.isKeyWindow {
+                // Remember who had the foreground so it can be given back, rather than
+                // leaving the user stranded in an app they did not choose.
+                let front = NSWorkspace.shared.frontmostApplication
+                if front?.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+                    previousFrontApp = front
+                }
+                NSApp.activate(ignoringOtherApps: true)
+                panel.makeKeyAndOrderFront(nil)
+            }
+        } else {
+            releaseKeyboard()
         }
+    }
+
+    /// Gives back key status and the foreground.
+    ///
+    /// This must never call `NSApp.hide(_:)`. For an accessory app that hides *every*
+    /// window it owns, including the notch panel, and nothing brings it back — the panel
+    /// simply vanishes and the app looks like it quit while still running.
+    private func releaseKeyboard() {
+        guard panel.isKeyWindow else { return }
+        panel.resignKey()
+        previousFrontApp?.activate()
+        previousFrontApp = nil
+        // Defensive: the panel must stay on screen no matter what the activation
+        // dance did to window ordering.
+        panel.orderFrontRegardless()
     }
 
     private func expand() {
         let target = geometry.expanded(forPage: panelState.page)
         hover.activeFrame = target
         model.databaseBytes = monitor.database.fileSizeBytes
-        monitor.setFastMode(true)
+        monitor.setFastMode(panelState.current.needsFastSampling)
         host.isHidden = false
         if let snapshot = monitor.latest, !snapshot.isGap { model.apply(snapshot) }
 
@@ -265,7 +326,7 @@ public final class NotchController {
     private func collapse() {
         monitor.setFastMode(false)
         hover.setLocked(false)
-        if panel.isKeyWindow { panel.resignKey(); NSApp.hide(nil) }
+        releaseKeyboard()
         reminderDismissTimer?.invalidate(); reminderDismissTimer = nil
         taskModel.reminderContext = nil
         // Always reopen on the live page; the other pages are somewhere you go.
@@ -286,8 +347,7 @@ public final class NotchController {
     /// monitor may have no notch at all — so the geometry is recomputed rather than
     /// cached for the lifetime of the process.
     private func screenParametersChanged() {
-        let screen = NSScreen.main ?? NSScreen.screens[0]
-        geometry = NotchGeometry.current(for: screen)
+        geometry = NotchGeometry.current()
         host.rootView = makeRootView()
         let frame = hover.isOpen ? geometry.expanded(forPage: panelState.page) : geometry.collapsed
         hover.activeFrame = frame
@@ -340,6 +400,7 @@ public final class NotchController {
             panel.animator().setFrame(target, display: true)
         }
 
+        reminderCursorOrigin = NSEvent.mouseLocation
         reminderDismissTimer?.invalidate()
         reminderDismissTimer = Timer.scheduledTimer(withTimeInterval: 6, repeats: false) { [weak self] _ in
             Task { @MainActor in self?.dismissReminder() }
@@ -349,8 +410,17 @@ public final class NotchController {
 
     private func dismissReminder() {
         reminderDismissTimer?.invalidate(); reminderDismissTimer = nil
-        // If the pointer arrived while it was showing, it is now a normal open panel.
-        guard !hover.isOpen else { return }
+
+        // The panel opens over wherever the pointer happens to be, so the tracking area
+        // fires and the hover tracker adopts it — and it would then stay open until the
+        // pointer moved, which can be a long time. Treat it as a real hover only if the
+        // pointer actually moved onto it; a stationary pointer did not choose anything.
+        let origin = reminderCursorOrigin
+        reminderCursorOrigin = nil
+        let moved = origin.map { hypot(NSEvent.mouseLocation.x - $0.x,
+                                       NSEvent.mouseLocation.y - $0.y) > 8 } ?? true
+        if hover.isOpen && moved { return }
+        hover.forceClose()
         taskModel.reminderContext = nil
         panelState.page = 0
         let target = geometry.collapsed

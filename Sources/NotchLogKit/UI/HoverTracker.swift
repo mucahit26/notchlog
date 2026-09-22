@@ -38,9 +38,14 @@ public final class HoverTracker {
 
     public func cursorEnteredCollapsedArea() {
         guard !isOpen, openTimer == nil else { return }
-        openTimer = Timer.scheduledTimer(withTimeInterval: openDelay, repeats: false) { [weak self] _ in
+        let timer = Timer(timeInterval: openDelay, repeats: false) { [weak self] _ in
             Task { @MainActor in self?.open() }
         }
+        // .common, not the default mode: while a list is being scrolled or a control
+        // dragged the run loop switches to event tracking and a default-mode timer
+        // stops firing — which on the task pages meant the close poll simply stopped.
+        RunLoop.main.add(timer, forMode: .common)
+        openTimer = timer
     }
 
     /// The tracking area's exit is only used to cancel a pending open — a cursor that
@@ -56,9 +61,11 @@ public final class HoverTracker {
         isOpen = true
         outsideSince = nil
         onOpen?()
-        pollTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.poll() }
         }
+        RunLoop.main.add(timer, forMode: .common)
+        pollTimer = timer
     }
 
     public func setLocked(_ locked: Bool) {

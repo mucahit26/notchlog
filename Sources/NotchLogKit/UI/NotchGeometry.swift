@@ -1,4 +1,5 @@
 import AppKit
+import CoreGraphics
 
 /// Where the panel lives, in AppKit's bottom-left origin coordinate space.
 ///
@@ -14,6 +15,30 @@ public struct NotchGeometry: Sendable {
     public let centerX: CGFloat
     public let topY: CGFloat
     public let screenFrame: NSRect
+
+    /// The screen the panel belongs on.
+    ///
+    /// **Not `NSScreen.main`.** That is whichever screen holds the active window, so it
+    /// changes as the user moves between displays — the panel would hop from one to the
+    /// other. It is also simply wrong for this app: attach an external monitor and macOS
+    /// may make it main, at which point a tool whose whole premise is the notch would
+    /// draw a small pill on a screen that has no notch.
+    ///
+    /// Preference order: a screen with an actual notch, then the built-in display, then
+    /// whatever is main.
+    public static func preferredScreen() -> NSScreen {
+        let screens = NSScreen.screens
+        if let notched = screens.first(where: {
+            $0.safeAreaInsets.top > 0 && $0.auxiliaryTopLeftArea != nil
+                && $0.auxiliaryTopRightArea != nil
+        }) {
+            return notched
+        }
+        if let builtIn = screens.first(where: { $0.isBuiltIn }) { return builtIn }
+        return NSScreen.main ?? screens.first ?? NSScreen.screens[0]
+    }
+
+    public static func current() -> NotchGeometry { current(for: preferredScreen()) }
 
     public static func current(for screen: NSScreen) -> NotchGeometry {
         let frame = screen.frame
@@ -67,4 +92,15 @@ public struct NotchGeometry: Sendable {
     /// Top inset the content must leave clear so nothing important is drawn behind
     /// the camera housing.
     public var contentTopInset: CGFloat { hasNotch ? bandHeight : 6 }
+}
+
+
+extension NSScreen {
+    /// True for the laptop's own display. `CGDisplayIsBuiltin` is the authoritative
+    /// check; the screen's localised name is not, since it is translated.
+    var isBuiltIn: Bool {
+        guard let number = deviceDescription[
+            NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else { return false }
+        return CGDisplayIsBuiltin(CGDirectDisplayID(number.uint32Value)) != 0
+    }
 }

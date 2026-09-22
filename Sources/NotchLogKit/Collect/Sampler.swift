@@ -68,7 +68,6 @@ public final class Sampler {
     public func tick(now: Date = Date()) throws -> Snapshot {
         let procs = try PSSource.sample()
         let net = try NettopSource.sample()
-        let disk = DiskIOSource.sample(pids: procs.map(\.pid))
 
         let elapsed = prevDate.map { now.timeIntervalSince($0) } ?? config.interval
         let isGap = prevDate == nil || elapsed > config.interval * config.gapFactor || elapsed <= 0
@@ -94,6 +93,12 @@ public final class Sampler {
             }
         }
         prevCPU = nextCPU
+
+        // Sampled for every process on purpose. Restricting this to "processes that
+        // look busy" was tried and reverted: `prevDisk` then holds only that subset, so
+        // a process moving in and out of the filter loses its baseline and reports a
+        // delta of zero. It cost the disk column its data and saved no measurable CPU.
+        let disk = DiskIOSource.sample(pids: procs.map(\.pid))
 
         // --- Network: per-socket deltas ---------------------------------------------
         // Counters are cumulative per open socket. A closed socket simply stops
